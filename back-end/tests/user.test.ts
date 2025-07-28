@@ -8,7 +8,7 @@ function createMockContext(method: string, path: string, body?: any): any {
     request: {
       method,
       url: new URL(`http://localhost:8000${path}`),
-      body: () => Promise.resolve({ value: body }),
+      body: () => Promise.resolve({ value: body || {} }),
       headers: new Headers()
     },
     response: {

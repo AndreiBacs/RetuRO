@@ -1,6 +1,11 @@
 import { Context } from 'oak';
 import { User, ApiResponse, CreateUserRequest, UpdateUserRequest } from '../types/index.ts';
 
+// Define the context type with params
+interface ContextWithParams extends Context {
+  params: Record<string, string>;
+}
+
 // Mock database - in a real app, this would be a database
 let users: User[] = [
   { id: 1, name: 'John Doe', email: 'john@example.com', createdAt: new Date(), updatedAt: new Date() },
@@ -29,7 +34,7 @@ export class UserController {
   }
 
   // Get user by ID
-  static async getUserById(ctx: Context) {
+  static async getUserById(ctx: ContextWithParams) {
     try {
       const id = parseInt(ctx.params.id);
       const user = users.find(u => u.id === id);
@@ -103,7 +108,7 @@ export class UserController {
   }
 
   // Update user
-  static async updateUser(ctx: Context) {
+  static async updateUser(ctx: ContextWithParams) {
     try {
       const id = parseInt(ctx.params.id);
       const body = await ctx.request.body().value as UpdateUserRequest;
@@ -143,7 +148,7 @@ export class UserController {
   }
 
   // Delete user
-  static async deleteUser(ctx: Context) {
+  static async deleteUser(ctx: ContextWithParams) {
     try {
       const id = parseInt(ctx.params.id);
       const userIndex = users.findIndex(u => u.id === id);
