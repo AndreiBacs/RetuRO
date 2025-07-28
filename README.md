@@ -28,8 +28,9 @@ cd RetuRO
 cp env.example .env
 ```
 
-3. Install dependencies (Deno handles this automatically):
+3. Navigate to the backend directory and install dependencies (Deno handles this automatically):
 ```bash
+cd back-end
 deno cache src/main.ts
 ```
 
@@ -37,26 +38,31 @@ deno cache src/main.ts
 
 ### Development Mode
 ```bash
+cd back-end
 deno task dev
 ```
 
 ### Production Mode
 ```bash
+cd back-end
 deno task start
 ```
 
 ### Running Tests
 ```bash
+cd back-end
 deno task test
 ```
 
 ### Code Formatting
 ```bash
+cd back-end
 deno task fmt
 ```
 
 ### Linting
 ```bash
+cd back-end
 deno task lint
 ```
 
@@ -101,18 +107,25 @@ curl -X DELETE http://localhost:8000/api/users/1
 ## Project Structure
 
 ```
-src/
-├── main.ts              # Application entry point
-├── controllers/         # Business logic controllers
-│   └── userController.ts
-├── routes/             # Route definitions
-│   └── userRoutes.ts
-├── middleware/          # Custom middleware
-│   └── auth.ts
-└── types/              # TypeScript type definitions
-    └── index.ts
-tests/
-└── user.test.ts        # Unit tests
+RetuRO/
+├── back-end/           # Backend application
+│   ├── deno.json       # Deno configuration
+│   ├── deno.lock       # Dependency lock file
+│   ├── src/            # Source code
+│   │   ├── main.ts     # Application entry point
+│   │   ├── controllers/ # Business logic controllers
+│   │   │   └── userController.ts
+│   │   ├── routes/     # Route definitions
+│   │   │   └── userRoutes.ts
+│   │   ├── middleware/ # Custom middleware
+│   │   │   └── auth.ts
+│   │   └── types/      # TypeScript type definitions
+│   │       └── index.ts
+│   └── tests/          # Unit tests
+│       └── user.test.ts
+├── env.example         # Environment variables template
+├── INSTALLATION.md     # Installation instructions
+└── README.md          # Project documentation
 ```
 
 ## Environment Variables
@@ -130,9 +143,9 @@ CORS_ORIGIN=http://localhost:3000,http://localhost:5173
 
 ### Adding New Routes
 
-1. Create a new controller in `src/controllers/`
-2. Create route definitions in `src/routes/`
-3. Import and use the routes in `src/main.ts`
+1. Create a new controller in `back-end/src/controllers/`
+2. Create route definitions in `back-end/src/routes/`
+3. Import and use the routes in `back-end/src/main.ts`
 
 ### Adding Authentication
 
@@ -146,6 +159,8 @@ router.get('/protected', requireAuth(), (ctx) => {
   // Route handler
 });
 ```
+
+**Note**: All commands should be run from the `back-end/` directory.
 
 ## Contributing
 
