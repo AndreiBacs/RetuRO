@@ -19,14 +19,12 @@
   "imports": {
     "oak": "https://deno.land/x/oak@v12.6.1/mod.ts",
     "cors": "https://deno.land/x/cors@v1.2.2/mod.ts",
-    "dotenv": "https://deno.land/x/dotenv@v3.2.2/mod.ts",
-    "denodb": "https://deno.land/x/denodb@v1.4.0/mod.ts"
+    "dotenv": "https://deno.land/x/dotenv@v3.2.2/mod.ts"
   },
   "compilerOptions": {
     "allowJs": true,
     "lib": ["deno.window", "dom"],
     "strict": true,
-    "noImplicitOverride": false,
     "moduleResolution": "node",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true
@@ -49,4 +47,4 @@
       "proseWrap": "preserve"
     }
   }
-}
+} 

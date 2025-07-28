@@ -3,27 +3,12 @@ import { oakCors } from 'cors';
 import { load } from 'https://deno.land/std@0.208.0/dotenv/mod.ts';
 import userRoutes from './routes/userRoutes.ts';
 import webhookRoutes from './routes/webhookRoutes.ts';
-import { initializeDatabase, checkDatabaseHealth } from './config/db.ts';
-import { runMigrations } from './config/migrations.ts';
-import { seedDatabase, isDatabaseEmpty } from './config/seeds.ts';
 
 // Load environment variables from env.dev file
 await load({ 
   envPath: '../env.dev',
   export: true 
 });
-
-// Initialize database and run migrations
-await initializeDatabase();
-//await runMigrations();
-
-// Seed database if empty (development only)
-// if (Deno.env.get('NODE_ENV') === 'development') {
-//   const isEmpty = await isDatabaseEmpty();
-//   if (isEmpty) {
-//     await seedDatabase();
-//   }
-// }
 
 const app = new Application();
 const router = new Router();
@@ -43,15 +28,12 @@ app.use(async (ctx: Context, next) => {
 });
 
 // Health check endpoint
-router.get('/health', async (ctx: Context) => {
-  const dbHealth = await checkDatabaseHealth();
-  
+router.get('/health', (ctx: Context) => {
   ctx.response.body = {
-    status: dbHealth.status === 'healthy' ? 'ok' : 'error',
+    status: 'ok',
     timestamp: new Date().toISOString(),
     service: 'ReruRO Backend',
-    version: '1.0.0',
-    database: dbHealth
+    version: '1.0.0'
   };
 });
 
