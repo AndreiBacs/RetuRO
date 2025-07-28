@@ -123,7 +123,7 @@ RetuRO/
 │   │       └── index.ts
 │   └── tests/          # Unit tests
 │       └── user.test.ts
-├── env.example         # Environment variables template
+├── env.dev         # Environment variables template
 ├── INSTALLATION.md     # Installation instructions
 └── README.md          # Project documentation
 ```

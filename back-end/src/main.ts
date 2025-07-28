@@ -2,9 +2,13 @@ import { Application, Router, Context } from 'oak';
 import { oakCors } from 'cors';
 import { load } from 'https://deno.land/std@0.208.0/dotenv/mod.ts';
 import userRoutes from './routes/userRoutes.ts';
+import webhookRoutes from './routes/webhookRoutes.ts';
 
-// Load environment variables
-await load({ export: true });
+// Load environment variables from env.dev file
+await load({ 
+  envPath: '../env.dev',
+  export: true 
+});
 
 const app = new Application();
 const router = new Router();
@@ -44,6 +48,10 @@ router.get('/api/hello', (ctx: Context) => {
 // User routes
 app.use(userRoutes.routes());
 app.use(userRoutes.allowedMethods());
+
+// Webhook routes
+app.use(webhookRoutes.routes());
+app.use(webhookRoutes.allowedMethods());
 
 // Error handling middleware
 app.use(async (ctx: Context, next) => {

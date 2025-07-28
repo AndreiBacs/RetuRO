@@ -63,7 +63,7 @@ cd RetuRO
 
 2. **Create environment file**:
 ```bash
-cp env.example .env
+cp env.dev .env
 ```
 
 3. **Cache dependencies** (Deno will download them automatically):
