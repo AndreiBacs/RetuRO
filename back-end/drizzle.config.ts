@@ -5,6 +5,6 @@ export default defineConfig({
   schema: "./src/db/schema.ts",
   dialect: "postgresql",
   dbCredentials: {
-    url: "postgresql://returo:returo@localhost:5432/returo",
+    url: Deno.env.get('APPLICATION_DB') || "postgresql://returo:returo@localhost:5432/returo",
   },
 });
