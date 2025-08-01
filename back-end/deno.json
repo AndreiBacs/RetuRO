@@ -14,12 +14,18 @@
     "check": "deno check src/**/*.ts",
     "cache": "deno cache src/main.ts",
     "clean": "rm -rf coverage/",
-    "type-check": "deno check --no-run src/**/*.ts"
+    "type-check": "deno check --no-run src/**/*.ts",
+    "db:generate": "deno run -A --node-modules-dir npm:drizzle-kit generate",
+    "db:migrate": "deno run -A --node-modules-dir npm:drizzle-kit migrate"
   },
   "imports": {
+    "@types/pg": "npm:@types/pg@^8.15.5",
     "oak": "https://deno.land/x/oak@v12.6.1/mod.ts",
     "cors": "https://deno.land/x/cors@v1.2.2/mod.ts",
-    "dotenv": "https://deno.land/x/dotenv@v3.2.2/mod.ts"
+    "dotenv": "https://deno.land/x/dotenv@v3.2.2/mod.ts",
+    "drizzle-orm": "npm:drizzle-orm@^0.44.4",
+    "drizzle-kit": "npm:drizzle-kit@^0.31.4",
+    "pg": "npm:pg@^8.16.3"
   },
   "compilerOptions": {
     "allowJs": true,
@@ -47,4 +53,4 @@
       "proseWrap": "preserve"
     }
   }
-} 
+}
