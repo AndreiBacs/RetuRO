@@ -204,7 +204,6 @@ CORS_ORIGIN=http://localhost:3000,http://localhost:5173
 
 # TOMRA Webhook
 TOMRA_WEBHOOK_SECRET=your_webhook_secret
-TOMRA_IP=34.140.242.111
 ```
 
 ## Database Schema
