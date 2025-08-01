@@ -4,6 +4,7 @@
   "tasks": {
     "dev": "deno run --allow-net --allow-read --allow-env --watch src/main.ts",
     "start": "deno run --allow-net --allow-read --allow-env src/main.ts",
+    "debug": "deno run --inspect-brk --allow-net --allow-read --allow-env src/main.ts",
     "test": "deno test --allow-net --allow-read --allow-env",
     "test:watch": "deno test --allow-net --allow-read --allow-env --watch",
     "test:coverage": "deno test --allow-net --allow-read --allow-env --coverage=coverage",

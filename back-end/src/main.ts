@@ -3,12 +3,21 @@ import { oakCors } from 'cors';
 import { load } from 'https://deno.land/std@0.208.0/dotenv/mod.ts';
 import userRoutes from './routes/userRoutes.ts';
 import webhookRoutes from './routes/webhookRoutes.ts';
+import { testDatabaseConnection } from './db/db.ts';
 
 // Load environment variables from env.dev file
 await load({ 
   envPath: '../env.dev',
   export: true 
 });
+
+// Test database connection on startup
+console.log('🔍 Testing database connection...');
+const dbConnected = await testDatabaseConnection();
+if (!dbConnected) {
+  console.error('❌ Failed to connect to database. Exiting...');
+  Deno.exit(1);
+}
 
 const app = new Application();
 const router = new Router();

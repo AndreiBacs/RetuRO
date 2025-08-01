@@ -1,6 +1,8 @@
 import { Context } from 'oak';
 import { TomraModel } from '../types/tomra.ts';
 import { SignatureVerification } from '../utils/signatureVerification.ts';
+import { db } from '../db/db.ts';
+import { tomraEvents } from '../db/schema.ts';
 
 export class WebhookController {
 
@@ -38,6 +40,25 @@ export class WebhookController {
       }
       
       console.log('---');
+
+      // Save the payload to the database
+      try {
+        await db.insert(tomraEvents).values({
+          payload: JSON.stringify(payload), // Ensure payload is serialized as JSON string
+        });
+        console.log('✅ Payload saved to the database');
+      } catch (dbError) {
+        console.error('❌ Error saving payload to the database:', dbError);
+        // Log more details about the error
+        if (dbError instanceof Error) {
+          console.error('Error details:', {
+            message: dbError.message,
+            stack: dbError.stack,
+          });
+        }
+        // Decide if you want to fail the webhook processing if the DB write fails.
+        // For now, we'll just log the error and continue.
+      }
       
       // Return success response
       ctx.response.status = 200;
