@@ -11,20 +11,38 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:retur_ro/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
+  testWidgets('Navigation app smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
     await tester.pumpWidget(const MyApp());
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    // Verify that the app title is displayed
+    expect(find.text('Navigation Bar Demo'), findsOneWidget);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
+    // Verify that the navigation bar is present
+    expect(find.byType(NavigationBar), findsOneWidget);
+
+    // Verify that all navigation destinations are present
+    expect(find.text('Home'), findsOneWidget);
+    expect(find.text('Search'), findsOneWidget);
+    expect(find.text('Profile'), findsOneWidget);
+
+    // Verify that the home page content is displayed initially
+    expect(find.text('Home Page'), findsOneWidget);
+    expect(find.text('Welcome to the home page!'), findsOneWidget);
+
+    // Test navigation to Search page
+    await tester.tap(find.text('Search'));
     await tester.pump();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // Test navigation to Profile page
+    await tester.tap(find.text('Profile'));
+    await tester.pump();
+
+    // Navigate back to Home
+    await tester.tap(find.text('Home'));
+    await tester.pump();
+
+    // Verify we're back on the home page
+    expect(find.text('Home Page'), findsOneWidget);
   });
 }
