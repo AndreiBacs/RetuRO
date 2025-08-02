@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:retur_ro/api/fake_api.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -135,7 +136,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
+                          color: Colors.black.withOpacity(0.1),
                           blurRadius: 10,
                           offset: const Offset(0, -2),
                         ),
@@ -185,7 +186,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                         color: Theme.of(context)
                                             .colorScheme
                                             .onSurface
-                                            .withValues(alpha: 0.7),
+                                            .withOpacity(0.7),
                                       ),
                                     ),
                                   ],
@@ -225,30 +226,31 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                   ),
                                 ),
                                 const SizedBox(height: 16),
-                                _buildPlaceItem(
-                                  'Coffee Shop',
-                                  '0.2 km away',
-                                  Icons.coffee,
-                                ),
-                                _buildPlaceItem(
-                                  'Restaurant',
-                                  '0.5 km away',
-                                  Icons.restaurant,
-                                ),
-                                _buildPlaceItem(
-                                  'Gas Station',
-                                  '0.8 km away',
-                                  Icons.local_gas_station,
-                                ),
-                                _buildPlaceItem(
-                                  'Shopping Mall',
-                                  '1.2 km away',
-                                  Icons.shopping_bag,
-                                ),
-                                _buildPlaceItem(
-                                  'Park',
-                                  '1.5 km away',
-                                  Icons.park,
+                                FutureBuilder<Iterable<String>>(
+                                  future: FakeApi.searchAddresses('a'),
+                                  builder: (context, snapshot) {
+                                    if (snapshot.connectionState ==
+                                        ConnectionState.waiting) {
+                                      return const Center(
+                                        child: CircularProgressIndicator(),
+                                      );
+                                    }
+                                    if (snapshot.hasError) {
+                                      return const Center(
+                                        child: Text('Error fetching data'),
+                                      );
+                                    }
+                                    final places = snapshot.data!.toList();
+                                    return Column(
+                                      children: places
+                                          .map((place) => _buildPlaceItem(
+                                                place,
+                                                '0.2 km away',
+                                                Icons.coffee,
+                                              ))
+                                          .toList(),
+                                    );
+                                  },
                                 ),
                               ],
                             ),
@@ -274,7 +276,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
         ),
       ),
       child: Row(
@@ -299,7 +301,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     fontSize: 14,
                     color: Theme.of(
                       context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.7),
+                    ).colorScheme.onSurface.withOpacity(0.7),
                   ),
                 ),
               ],
@@ -310,10 +312,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             size: 16,
             color: Theme.of(
               context,
-            ).colorScheme.onSurface.withValues(alpha: 0.5),
+            ).colorScheme.onSurface.withOpacity(0.5),
           ),
         ],
       ),
     );
   }
-} 
+}
+ 

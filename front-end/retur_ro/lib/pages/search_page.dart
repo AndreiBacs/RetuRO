@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:retur_ro/api/fake_api.dart';
 
 class SearchPage extends StatelessWidget {
   const SearchPage({super.key});
@@ -7,7 +8,10 @@ class SearchPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Column(
       children: <Widget>[
-        Padding(padding: EdgeInsets.all(16.0), child: _AutocompleteSearch()),
+        Padding(
+          padding: EdgeInsets.all(16.0),
+          child: _AutocompleteSearch(),
+        )
       ],
     );
   }
@@ -29,7 +33,7 @@ class _AutocompleteSearchState extends State<_AutocompleteSearch> {
     return Autocomplete<String>(
       optionsBuilder: (TextEditingValue value) async {
         _searchQuery = value.text;
-        final Iterable<String> results = await _FakeApi.searchAddresses(
+        final Iterable<String> results = await FakeApi.searchAddresses(
           value.text,
         );
 
@@ -44,48 +48,22 @@ class _AutocompleteSearchState extends State<_AutocompleteSearch> {
       onSelected: (String selection) {
         debugPrint('Selected: $selection');
       },
-      fieldViewBuilder:
-          (
-            BuildContext context,
-            TextEditingController textEditingController,
-            FocusNode focusNode,
-            VoidCallback onFieldSubmitted,
-          ) {
-            return TextFormField(
-              controller: textEditingController,
-              focusNode: focusNode,
-              decoration: const InputDecoration(
-                prefixIcon: Icon(Icons.search),
-                hintText: "Search for a location",
-              ),
-              onFieldSubmitted: (String value) {
-                onFieldSubmitted();
-              },
-            );
+      fieldViewBuilder: (BuildContext context,
+          TextEditingController textEditingController,
+          FocusNode focusNode,
+          VoidCallback onFieldSubmitted) {
+        return TextFormField(
+          controller: textEditingController,
+          focusNode: focusNode,
+          decoration: const InputDecoration(
+            prefixIcon: Icon(Icons.search),
+            hintText: "Search for a location",
+          ),
+          onFieldSubmitted: (String value) {
+            onFieldSubmitted();
           },
-    );
-  }
-}
-
-class _FakeApi {
-  static const List<String> _addresses = [
-    '123 Main St, Anytown, USA',
-    '456 Elm St, Othertown, USA',
-    '789 Oak St, Anothertown, USA',
-    '101 Pine St, Yetanothertown, USA',
-    '123 Main St, Anytown, USA',
-    '456 Elm St, Othertown, USA',
-    '789 Oak St, Anothertown, USA',
-    '101 Pine St, Yetanothertown, USA',
-  ];
-
-  static Future<Iterable<String>> searchAddresses(String query) async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    if (query == '') {
-      return const Iterable<String>.empty();
-    }
-    return _addresses.where(
-      (address) => address.toLowerCase().contains(query.toLowerCase()),
+        );
+      },
     );
   }
 }
