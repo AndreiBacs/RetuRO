@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:retur_ro/api/fake_api.dart';
+import 'package:retur_ro/location_service.dart';
+import 'package:geolocator/geolocator.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -14,6 +16,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   bool _isBottomSheetExpanded = false;
   double _dragStartY = 0;
   double _currentDragOffset = 0;
+  final LocationService _locationService = LocationService();
+  Position? _currentPosition;
+  String? _currentAddress;
 
   @override
   void initState() {
@@ -25,6 +30,24 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     _bottomSheetAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _bottomSheetController, curve: Curves.easeInOut),
     );
+    _determinePosition();
+  }
+
+  Future<void> _determinePosition() async {
+    try {
+      final position = await _locationService.determinePosition();
+      final address = await _locationService.getAddressFromPosition(position);
+      setState(() {
+        _currentPosition = position;
+        _currentAddress = address;
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.toString())));
+      }
+    }
   }
 
   @override
@@ -136,7 +159,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 10,
                           offset: const Offset(0, -2),
                         ),
@@ -180,13 +203,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                       ),
                                     ),
                                     Text(
-                                      '123 Main Street, City, State',
+                                      _currentAddress ?? 'Loading...',
                                       style: TextStyle(
                                         fontSize: 14,
                                         color: Theme.of(context)
                                             .colorScheme
                                             .onSurface
-                                            .withOpacity(0.7),
+                                            .withValues(alpha: 0.7),
                                       ),
                                     ),
                                   ],
@@ -198,9 +221,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                   _isBottomSheetExpanded
                                       ? Icons.keyboard_arrow_down
                                       : Icons.keyboard_arrow_up,
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.primary,
+                                  color: Theme.of(context).colorScheme.primary,
                                 ),
                               ),
                             ],
@@ -243,11 +264,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                     final places = snapshot.data!.toList();
                                     return Column(
                                       children: places
-                                          .map((place) => _buildPlaceItem(
-                                                place,
-                                                '0.2 km away',
-                                                Icons.coffee,
-                                              ))
+                                          .map(
+                                            (place) => _buildPlaceItem(
+                                              place,
+                                              '0.2 km away',
+                                              Icons.coffee,
+                                            ),
+                                          )
                                           .toList(),
                                     );
                                   },
@@ -276,7 +299,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
       child: Row(
@@ -301,7 +324,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     fontSize: 14,
                     color: Theme.of(
                       context,
-                    ).colorScheme.onSurface.withOpacity(0.7),
+                    ).colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                 ),
               ],
@@ -312,11 +335,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             size: 16,
             color: Theme.of(
               context,
-            ).colorScheme.onSurface.withOpacity(0.5),
+            ).colorScheme.onSurface.withValues(alpha: 0.5),
           ),
         ],
       ),
     );
   }
 }
- 
