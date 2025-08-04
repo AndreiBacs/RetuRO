@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:retur_ro/api/fake_api.dart';
-import 'package:retur_ro/location_service.dart';
-import 'package:geolocator/geolocator.dart';
+import 'package:retur_ro/location_cache.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -13,16 +12,15 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final DraggableScrollableController _sheetController =
       DraggableScrollableController();
-  final LocationService _locationService = LocationService();
-  Position? _currentPosition;
-  String? _currentAddress;
+  final LocationCache _locationCache = LocationCache();
   bool _isBottomSheetExpanded = false;
 
   @override
   void initState() {
     super.initState();
-    _determinePosition();
     _sheetController.addListener(_updateBottomSheetState);
+    // Initial location fetch, if not already loaded
+    _locationCache.getLocation();
   }
 
   void _updateBottomSheetState() {
@@ -31,23 +29,6 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         _isBottomSheetExpanded = isExpanded;
       });
-    }
-  }
-
-  Future<void> _determinePosition() async {
-    try {
-      final position = await _locationService.determinePosition();
-      final address = await _locationService.getAddressFromPosition(position);
-      setState(() {
-        _currentPosition = position;
-        _currentAddress = address;
-      });
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(e.toString())));
-      }
     }
   }
 
@@ -100,7 +81,7 @@ class _HomePageState extends State<HomePage> {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
+                    color: Colors.black.withOpacity(0.1),
                     blurRadius: 10,
                     offset: const Offset(0, -2),
                   ),
@@ -126,10 +107,22 @@ class _HomePageState extends State<HomePage> {
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: Row(
                       children: [
-                        Icon(
-                          Icons.location_on,
-                          color: Theme.of(context).colorScheme.primary,
-                          size: 24,
+                        ValueListenableBuilder<bool>(
+                          valueListenable: _locationCache.isLoading,
+                          builder: (context, isLoading, child) {
+                            return IconButton(
+                              icon: Icon(
+                                Icons.location_on,
+                                color: Theme.of(context).colorScheme.primary,
+                                size: 24,
+                              ),
+                              onPressed: isLoading
+                                  ? null
+                                  : () => _locationCache.getLocation(
+                                      forceRefresh: true,
+                                    ),
+                            );
+                          },
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -146,14 +139,19 @@ class _HomePageState extends State<HomePage> {
                                   ).colorScheme.onSurface,
                                 ),
                               ),
-                              Text(
-                                _currentAddress ?? 'Loading...',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurface.withValues(alpha: 0.7),
-                                ),
+                              ValueListenableBuilder<String?>(
+                                valueListenable: _locationCache.address,
+                                builder: (context, address, child) {
+                                  return Text(
+                                    address ?? 'Loading...',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface.withOpacity(0.7),
+                                    ),
+                                  );
+                                },
                               ),
                             ],
                           ),
@@ -234,7 +232,7 @@ class _HomePageState extends State<HomePage> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
         ),
       ),
       child: Row(
@@ -259,7 +257,7 @@ class _HomePageState extends State<HomePage> {
                     fontSize: 14,
                     color: Theme.of(
                       context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.7),
+                    ).colorScheme.onSurface.withOpacity(0.7),
                   ),
                 ),
               ],
@@ -268,7 +266,7 @@ class _HomePageState extends State<HomePage> {
           Icon(
             Icons.arrow_forward_ios,
             size: 16,
-            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
           ),
         ],
       ),
