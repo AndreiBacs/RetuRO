@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:retur_ro/api/fake_api.dart';
-import 'package:retur_ro/location_service.dart';
-import 'package:geolocator/geolocator.dart';
+import 'package:retur_ro/location_cache.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -10,109 +9,43 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
-  late AnimationController _bottomSheetController;
-  late Animation<double> _bottomSheetAnimation;
+class _HomePageState extends State<HomePage> {
+  final DraggableScrollableController _sheetController =
+      DraggableScrollableController();
+  final LocationCache _locationCache = LocationCache();
   bool _isBottomSheetExpanded = false;
-  double _dragStartY = 0;
-  double _currentDragOffset = 0;
-  final LocationService _locationService = LocationService();
-  Position? _currentPosition;
-  String? _currentAddress;
 
   @override
   void initState() {
     super.initState();
-    _bottomSheetController = AnimationController(
-      duration: const Duration(milliseconds: 300),
-      vsync: this,
-    );
-    _bottomSheetAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _bottomSheetController, curve: Curves.easeInOut),
-    );
-    _determinePosition();
+    _sheetController.addListener(_updateBottomSheetState);
+    // Initial location fetch, if not already loaded
+    _locationCache.getLocation();
   }
 
-  Future<void> _determinePosition() async {
-    try {
-      final position = await _locationService.determinePosition();
-      final address = await _locationService.getAddressFromPosition(position);
+  void _updateBottomSheetState() {
+    final isExpanded = _sheetController.size > 0.3;
+    if (isExpanded != _isBottomSheetExpanded) {
       setState(() {
-        _currentPosition = position;
-        _currentAddress = address;
+        _isBottomSheetExpanded = isExpanded;
       });
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(e.toString())));
-      }
     }
   }
 
   @override
   void dispose() {
-    _bottomSheetController.dispose();
+    _sheetController.removeListener(_updateBottomSheetState);
+    _sheetController.dispose();
     super.dispose();
   }
 
   void _toggleBottomSheet() {
-    setState(() {
-      _isBottomSheetExpanded = !_isBottomSheetExpanded;
-      if (_isBottomSheetExpanded) {
-        _bottomSheetController.forward();
-      } else {
-        _bottomSheetController.reverse();
-      }
-    });
-  }
-
-  void _onDragStart(DragStartDetails details) {
-    _dragStartY = details.globalPosition.dy;
-    _currentDragOffset = 0;
-  }
-
-  void _onDragUpdate(DragUpdateDetails details) {
-    _currentDragOffset = details.globalPosition.dy - _dragStartY;
-
-    // Limit drag to reasonable bounds
-    if (_isBottomSheetExpanded) {
-      _currentDragOffset = _currentDragOffset.clamp(-100, 200);
-    } else {
-      _currentDragOffset = _currentDragOffset.clamp(-200, 100);
-    }
-  }
-
-  void _onDragEnd(DragEndDetails details) {
-    // Determine if we should expand or collapse based on drag velocity and distance
-    double velocity = details.velocity.pixelsPerSecond.dy;
-    double threshold = 50; // pixels
-
-    if (_isBottomSheetExpanded) {
-      // Currently expanded - check if we should collapse
-      if (_currentDragOffset > threshold || velocity > 500) {
-        setState(() {
-          _isBottomSheetExpanded = false;
-          _bottomSheetController.reverse();
-        });
-      } else {
-        // Snap back to expanded
-        _bottomSheetController.forward();
-      }
-    } else {
-      // Currently collapsed - check if we should expand
-      if (_currentDragOffset < -threshold || velocity < -500) {
-        setState(() {
-          _isBottomSheetExpanded = true;
-          _bottomSheetController.forward();
-        });
-      } else {
-        // Snap back to collapsed
-        _bottomSheetController.reverse();
-      }
-    }
-
-    _currentDragOffset = 0;
+    final targetSize = _isBottomSheetExpanded ? 0.25 : 0.6;
+    _sheetController.animateTo(
+      targetSize,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
   }
 
   @override
@@ -134,158 +67,158 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             ],
           ),
         ),
-        Positioned(
-          left: 0,
-          right: 0,
-          bottom: 0,
-          child: AnimatedBuilder(
-            animation: _bottomSheetAnimation,
-            builder: (context, child) {
-              return Transform.translate(
-                offset: Offset(
-                  0,
-                  80 * (1 - _bottomSheetAnimation.value) + _currentDragOffset,
+        DraggableScrollableSheet(
+          controller: _sheetController,
+          initialChildSize: 0.25,
+          minChildSize: 0.25,
+          maxChildSize: 0.6,
+          builder: (BuildContext context, ScrollController scrollController) {
+            return Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(20),
                 ),
-                child: GestureDetector(
-                  onPanStart: _onDragStart,
-                  onPanUpdate: _onDragUpdate,
-                  onPanEnd: _onDragEnd,
-                  child: Container(
-                    height: _isBottomSheetExpanded ? 400 : 200,
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, -2),
+                  ),
+                ],
+              ),
+              child: ListView(
+                controller: scrollController,
+                children: [
+                  // Handle bar
+                  Center(
+                    child: Container(
+                      margin: const EdgeInsets.only(top: 8, bottom: 8),
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(2),
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          blurRadius: 10,
-                          offset: const Offset(0, -2),
-                        ),
-                      ],
                     ),
-                    child: Column(
+                  ),
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Row(
                       children: [
-                        // Handle bar
-                        Container(
-                          margin: const EdgeInsets.only(top: 8),
-                          width: 40,
-                          height: 4,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[300],
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                        // Header
-                        Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Row(
-                            children: [
-                              Icon(
+                        ValueListenableBuilder<bool>(
+                          valueListenable: _locationCache.isLoading,
+                          builder: (context, isLoading, child) {
+                            return IconButton(
+                              icon: Icon(
                                 Icons.location_on,
                                 color: Theme.of(context).colorScheme.primary,
                                 size: 24,
                               ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Current Location',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.onSurface,
-                                      ),
+                              onPressed: isLoading
+                                  ? null
+                                  : () => _locationCache.getLocation(
+                                      forceRefresh: true,
                                     ),
-                                    Text(
-                                      _currentAddress ?? 'Loading...',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurface
-                                            .withValues(alpha: 0.7),
-                                      ),
-                                    ),
-                                  ],
+                            );
+                          },
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Current Location',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
                                 ),
                               ),
-                              IconButton(
-                                onPressed: _toggleBottomSheet,
-                                icon: Icon(
-                                  _isBottomSheetExpanded
-                                      ? Icons.keyboard_arrow_down
-                                      : Icons.keyboard_arrow_up,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
+                              ValueListenableBuilder<String?>(
+                                valueListenable: _locationCache.address,
+                                builder: (context, address, child) {
+                                  return Text(
+                                    address ?? 'Loading...',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface.withOpacity(0.7),
+                                    ),
+                                  );
+                                },
                               ),
                             ],
                           ),
                         ),
-                        // Content
-                        Expanded(
-                          child: SingleChildScrollView(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16.0,
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Nearby Places',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 18,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurface,
-                                  ),
-                                ),
-                                const SizedBox(height: 16),
-                                FutureBuilder<Iterable<String>>(
-                                  future: FakeApi.searchAddresses('a'),
-                                  builder: (context, snapshot) {
-                                    if (snapshot.connectionState ==
-                                        ConnectionState.waiting) {
-                                      return const Center(
-                                        child: CircularProgressIndicator(),
-                                      );
-                                    }
-                                    if (snapshot.hasError) {
-                                      return const Center(
-                                        child: Text('Error fetching data'),
-                                      );
-                                    }
-                                    final places = snapshot.data!.toList();
-                                    return Column(
-                                      children: places
-                                          .map(
-                                            (place) => _buildPlaceItem(
-                                              place,
-                                              '0.2 km away',
-                                              Icons.coffee,
-                                            ),
-                                          )
-                                          .toList(),
-                                    );
-                                  },
-                                ),
-                              ],
-                            ),
+                        IconButton(
+                          onPressed: _toggleBottomSheet,
+                          icon: Icon(
+                            _isBottomSheetExpanded
+                                ? Icons.keyboard_arrow_down
+                                : Icons.keyboard_arrow_up,
+                            color: Theme.of(context).colorScheme.primary,
                           ),
                         ),
                       ],
                     ),
                   ),
-                ),
-              );
-            },
-          ),
+                  const SizedBox(height: 16),
+                  // Content
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Nearby Places',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        FutureBuilder<Iterable<String>>(
+                          future: FakeApi.searchAddresses('a'),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Center(
+                                child: CircularProgressIndicator(),
+                              );
+                            }
+                            if (snapshot.hasError) {
+                              return const Center(
+                                child: Text('Error fetching data'),
+                              );
+                            }
+                            final places = snapshot.data!.toList();
+                            return Column(
+                              children: places
+                                  .map(
+                                    (place) => _buildPlaceItem(
+                                      place,
+                                      '0.2 km away',
+                                      Icons.coffee,
+                                    ),
+                                  )
+                                  .toList(),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
         ),
       ],
     );
@@ -299,7 +232,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
         ),
       ),
       child: Row(
@@ -324,7 +257,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                     fontSize: 14,
                     color: Theme.of(
                       context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.7),
+                    ).colorScheme.onSurface.withOpacity(0.7),
                   ),
                 ),
               ],
@@ -333,9 +266,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           Icon(
             Icons.arrow_forward_ios,
             size: 16,
-            color: Theme.of(
-              context,
-            ).colorScheme.onSurface.withValues(alpha: 0.5),
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
           ),
         ],
       ),
