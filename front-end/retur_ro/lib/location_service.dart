@@ -77,17 +77,17 @@ class LocationService {
   Future<String> _getAddressForWeb(Position position) async {
     try {
       debugPrint('Using web-specific geocoding...');
-      
+
       // For web, we'll use a simpler approach that works better
       List<Placemark> placemarks = await placemarkFromCoordinates(
         position.latitude,
         position.longitude,
       );
-      
+
       if (placemarks.isNotEmpty) {
         Placemark place = placemarks[0];
         List<String> parts = [];
-        
+
         if (place.name != null && place.name!.isNotEmpty) {
           parts.add(place.name!);
         }
@@ -97,12 +97,12 @@ class LocationService {
         if (place.country != null && place.country!.isNotEmpty) {
           parts.add(place.country!);
         }
-        
+
         if (parts.isNotEmpty) {
           return parts.join(", ");
         }
       }
-      
+
       // If primary method fails, try alternative
       debugPrint('Primary web geocoding failed, trying alternative...');
       return await _getAddressForWebAlternative(position);
@@ -115,16 +115,16 @@ class LocationService {
   Future<String> _getAddressForWebAlternative(Position position) async {
     try {
       debugPrint('Trying alternative web geocoding method...');
-      
+
       // Use a different approach for web - try to get location from coordinates
       List<Location> locations = await locationFromAddress(
         '${position.latitude}, ${position.longitude}',
       );
-      
+
       if (locations.isNotEmpty) {
         return "Location found via coordinates";
       }
-      
+
       return "Lat: ${position.latitude.toStringAsFixed(6)}, Lng: ${position.longitude.toStringAsFixed(6)}";
     } catch (e) {
       debugPrint('Alternative web geocoding also failed: $e');
