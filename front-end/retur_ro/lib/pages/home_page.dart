@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:retur_ro/api/fake_api.dart';
 import 'package:retur_ro/location_cache.dart';
 
@@ -13,6 +16,8 @@ class _HomePageState extends State<HomePage> {
   final DraggableScrollableController _sheetController =
       DraggableScrollableController();
   final LocationCache _locationCache = LocationCache();
+  final MapController _mapController = MapController();
+
   bool _isBottomSheetExpanded = false;
 
   @override
@@ -21,6 +26,17 @@ class _HomePageState extends State<HomePage> {
     _sheetController.addListener(_updateBottomSheetState);
     // Initial location fetch, if not already loaded
     _locationCache.getLocation();
+    
+    // Listen for position changes and move map
+    _locationCache.position.addListener(() {
+      final position = _locationCache.position.value;
+      if (position != null) {
+        _mapController.move(
+          LatLng(position.latitude, position.longitude),
+          13.0,
+        );
+      }
+    });
   }
 
   void _updateBottomSheetState() {
@@ -35,7 +51,9 @@ class _HomePageState extends State<HomePage> {
   @override
   void dispose() {
     _sheetController.removeListener(_updateBottomSheetState);
+    _locationCache.position.removeListener(() {});
     _sheetController.dispose();
+    _mapController.dispose();
     super.dispose();
   }
 
@@ -52,26 +70,42 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        const Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: <Widget>[
-              Icon(Icons.home, size: 64, color: Colors.deepPurple),
-              SizedBox(height: 16),
-              Text(
-                'Home Page',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 8),
-              Text('Welcome to the home page!', style: TextStyle(fontSize: 16)),
-            ],
+        FlutterMap(
+          mapController: _mapController,
+          options: MapOptions(
+            initialCenter: LatLng(
+              _locationCache.position.value?.latitude ?? 44.4268,
+              _locationCache.position.value?.longitude ?? 26.1025,
+            ), // Bucharest coordinates
+            initialZoom: 25,
           ),
+          children: [
+            TileLayer(
+              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              userAgentPackageName: 'com.example.retur_ro',
+            ),
+            ValueListenableBuilder<Position?>(
+              valueListenable: _locationCache.position,
+              builder: (context, position, child) {
+                if (position == null) return const MarkerLayer(markers: []);
+                return MarkerLayer(
+                  markers: [
+                    Marker(
+                      point: LatLng(position.latitude, position.longitude),
+                      child: const Icon(Icons.location_on, color: Colors.red),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ],
         ),
         DraggableScrollableSheet(
           controller: _sheetController,
           initialChildSize: 0.25,
-          minChildSize: 0.25,
-          maxChildSize: 0.6,
+          minChildSize: 0.10,
+          maxChildSize: 1,
+          expand: true,
           builder: (BuildContext context, ScrollController scrollController) {
             return Container(
               decoration: BoxDecoration(
@@ -81,7 +115,7 @@ class _HomePageState extends State<HomePage> {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 10,
                     offset: const Offset(0, -2),
                   ),
@@ -146,9 +180,10 @@ class _HomePageState extends State<HomePage> {
                                     address ?? 'Loading...',
                                     style: TextStyle(
                                       fontSize: 14,
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onSurface.withOpacity(0.7),
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withValues(alpha: 0.7),
                                     ),
                                   );
                                 },
@@ -232,7 +267,7 @@ class _HomePageState extends State<HomePage> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
       child: Row(
@@ -257,16 +292,18 @@ class _HomePageState extends State<HomePage> {
                     fontSize: 14,
                     color: Theme.of(
                       context,
-                    ).colorScheme.onSurface.withOpacity(0.7),
+                    ).colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                 ),
               ],
             ),
           ),
           Icon(
-            Icons.arrow_forward_ios,
+            Icons.arrow_forward,
             size: 16,
-            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: 0.5),
           ),
         ],
       ),
