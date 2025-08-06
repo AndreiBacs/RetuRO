@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'pages/home_page.dart';
 import 'pages/search_page.dart';
 import 'pages/profile_page.dart';
+import 'widgets/recycle_icon.dart';
 
 void main() {
   runApp(const MyApp());
@@ -13,7 +14,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Navigation Bar Demo',
+      title: 'Return IT',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color.fromARGB(255, 58, 183, 106),
@@ -21,7 +22,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       debugShowCheckedModeBanner: false,
-      home: const MyHomePage(title: 'Navigation Bar Demo'),
+      home: const MyHomePage(title: 'Return IT'),
     );
   }
 }
@@ -56,6 +57,15 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: RecycleIcon(
+              size: 28.0,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+        ],
       ),
       body: _pages[_selectedIndex],
       bottomNavigationBar: NavigationBar(
