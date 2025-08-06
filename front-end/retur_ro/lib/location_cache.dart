@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:retur_ro/location_service.dart';
+import 'package:retur_ro/services/location_service.dart';
 
 class LocationCache {
   static final LocationCache _instance = LocationCache._internal();
