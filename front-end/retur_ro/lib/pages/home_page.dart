@@ -26,7 +26,7 @@ class _HomePageState extends State<HomePage> {
     _sheetController.addListener(_updateBottomSheetState);
     // Initial location fetch, if not already loaded
     _locationCache.getLocation();
-    
+
     // Listen for position changes and move map
     _locationCache.position.addListener(() {
       final position = _locationCache.position.value;
@@ -58,7 +58,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _toggleBottomSheet() {
-    final targetSize = _isBottomSheetExpanded ? 0.25 : 0.6;
+    final targetSize = _isBottomSheetExpanded ? 0.1 : 0.6;
     _sheetController.animateTo(
       targetSize,
       duration: const Duration(milliseconds: 300),
@@ -77,7 +77,7 @@ class _HomePageState extends State<HomePage> {
               _locationCache.position.value?.latitude ?? 44.4268,
               _locationCache.position.value?.longitude ?? 26.1025,
             ), // Bucharest coordinates
-            initialZoom: 25,
+            initialZoom: 15,
           ),
           children: [
             TileLayer(
@@ -92,7 +92,7 @@ class _HomePageState extends State<HomePage> {
                   markers: [
                     Marker(
                       point: LatLng(position.latitude, position.longitude),
-                      child: const Icon(Icons.location_on, color: Colors.red),
+                      child: const Icon(Icons.my_location, color: Colors.blueAccent),
                     ),
                   ],
                 );
