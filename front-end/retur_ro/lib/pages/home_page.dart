@@ -19,6 +19,7 @@ class _HomePageState extends State<HomePage> {
   final MapController _mapController = MapController();
 
   bool _isBottomSheetExpanded = false;
+  VoidCallback? _positionListener;
 
   @override
   void initState() {
@@ -28,7 +29,7 @@ class _HomePageState extends State<HomePage> {
     _locationCache.getLocation();
 
     // Listen for position changes and move map
-    _locationCache.position.addListener(() {
+    _positionListener = () {
       final position = _locationCache.position.value;
       if (position != null) {
         _mapController.move(
@@ -36,7 +37,8 @@ class _HomePageState extends State<HomePage> {
           13.0,
         );
       }
-    });
+    };
+    _locationCache.position.addListener(_positionListener!);
   }
 
   void _updateBottomSheetState() {
@@ -51,7 +53,9 @@ class _HomePageState extends State<HomePage> {
   @override
   void dispose() {
     _sheetController.removeListener(_updateBottomSheetState);
-    _locationCache.position.removeListener(() {});
+    if (_positionListener != null) {
+      _locationCache.position.removeListener(_positionListener!);
+    }
     _sheetController.dispose();
     _mapController.dispose();
     super.dispose();
