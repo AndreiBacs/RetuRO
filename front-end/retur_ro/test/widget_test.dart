@@ -16,7 +16,7 @@ void main() {
     await tester.pumpWidget(const MyApp());
 
     // Verify that the app title is displayed
-    expect(find.text('Navigation Bar Demo'), findsOneWidget);
+    expect(find.text('Return IT'), findsOneWidget);
 
     // Verify that the navigation bar is present
     expect(find.byType(NavigationBar), findsOneWidget);
