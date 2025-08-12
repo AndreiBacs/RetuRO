@@ -23,12 +23,20 @@ class _HomePageState extends State<HomePage> {
   bool _isBottomSheetCollapsed = false;
   VoidCallback? _positionListener;
 
+  // Add state variables for places data
+  List<String> _places = [];
+  bool _isLoadingPlaces = true;
+  String? _placesError;
+
   @override
   void initState() {
     super.initState();
     _sheetController.addListener(_updateBottomSheetState);
     // Initial location fetch, if not already loaded
     _locationCache.getLocation();
+
+    // Fetch places data on initialization
+    _fetchPlacesData();
 
     // Listen for position changes and move map
     _positionListener = () {
@@ -41,6 +49,28 @@ class _HomePageState extends State<HomePage> {
       }
     };
     _locationCache.position.addListener(_positionListener!);
+  }
+
+  // Add method to fetch places data
+  Future<void> _fetchPlacesData() async {
+    try {
+      setState(() {
+        _isLoadingPlaces = true;
+        _placesError = null;
+      });
+
+      final places = await FakeApi.searchAddresses('a');
+
+      setState(() {
+        _places = places.toList();
+        _isLoadingPlaces = false;
+      });
+    } catch (e) {
+      setState(() {
+        _placesError = e.toString();
+        _isLoadingPlaces = false;
+      });
+    }
   }
 
   void _updateBottomSheetState() {
@@ -266,34 +296,24 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        FutureBuilder<Iterable<String>>(
-                          future: FakeApi.searchAddresses('a'),
-                          builder: (context, snapshot) {
-                            if (snapshot.connectionState ==
-                                ConnectionState.waiting) {
-                              return const Center(
-                                child: CircularProgressIndicator(),
-                              );
-                            }
-                            if (snapshot.hasError) {
-                              return const Center(
-                                child: Text('Error fetching data'),
-                              );
-                            }
-                            final places = snapshot.data!.toList();
-                            return Column(
-                              children: places
-                                  .map(
-                                    (place) => _buildPlaceItem(
-                                      place,
-                                      '0.2 km away',
-                                      Icons.coffee,
-                                    ),
-                                  )
-                                  .toList(),
-                            );
-                          },
-                        ),
+                        if (_isLoadingPlaces)
+                          const Center(child: CircularProgressIndicator())
+                        else if (_placesError != null)
+                          Center(
+                            child: Text('Error fetching places: $_placesError'),
+                          )
+                        else
+                          Column(
+                            children: _places
+                                .map(
+                                  (place) => _buildPlaceItem(
+                                    place,
+                                    '0.2 km away',
+                                    Icons.coffee,
+                                  ),
+                                )
+                                .toList(),
+                          ),
                       ],
                     ),
                   ),
