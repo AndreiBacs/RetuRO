@@ -1,10 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:retur_ro/api/fake_api.dart';
 import 'package:retur_ro/location_cache.dart';
+import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -28,6 +30,9 @@ class _HomePageState extends State<HomePage> {
   bool _isLoadingPlaces = true;
   String? _placesError;
 
+  late AlignOnUpdate _alignPositionOnUpdate;
+  late final StreamController<double?> _alignPositionStreamController;
+
   @override
   void initState() {
     super.initState();
@@ -49,6 +54,9 @@ class _HomePageState extends State<HomePage> {
       }
     };
     _locationCache.position.addListener(_positionListener!);
+
+    _alignPositionOnUpdate = AlignOnUpdate.always;
+    _alignPositionStreamController = StreamController<double?>();
   }
 
   // Add method to fetch places data
@@ -95,6 +103,7 @@ class _HomePageState extends State<HomePage> {
     }
     _sheetController.dispose();
     _mapController.dispose();
+    _alignPositionStreamController.close();
     super.dispose();
   }
 
@@ -127,28 +136,39 @@ class _HomePageState extends State<HomePage> {
               _locationCache.position.value?.longitude ?? 26.1025,
             ), // Bucharest coordinates
             initialZoom: 15,
+            onPositionChanged: (position, hasGesture) {
+              if (hasGesture && _alignPositionOnUpdate != AlignOnUpdate.never) {
+                setState(() {
+                  _alignPositionOnUpdate = AlignOnUpdate.never;
+                });
+              }
+            },
           ),
           children: [
             TileLayer(
               urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
               userAgentPackageName: 'com.example.retur_ro',
             ),
-            ValueListenableBuilder<Position?>(
-              valueListenable: _locationCache.position,
-              builder: (context, position, child) {
-                if (position == null) return const MarkerLayer(markers: []);
-                return MarkerLayer(
-                  markers: [
-                    Marker(
-                      point: LatLng(position.latitude, position.longitude),
-                      child: const Icon(
-                        Icons.my_location,
-                        color: Colors.blueAccent,
-                      ),
-                    ),
-                  ],
-                );
-              },
+            CurrentLocationLayer(
+              alignPositionStream: _alignPositionStreamController.stream,
+              alignPositionOnUpdate: _alignPositionOnUpdate,
+            ),
+            Align(
+              alignment: Alignment.bottomRight,
+              child: Padding(
+                padding: EdgeInsets.all(20.0),
+                child: FloatingActionButton(
+                  onPressed: () {
+                    setState(() {
+                      _alignPositionOnUpdate = AlignOnUpdate.always;
+                    });
+                    _alignPositionStreamController.add(20);
+                  },
+                  child: _alignPositionOnUpdate == AlignOnUpdate.always
+                      ? const Icon(Icons.my_location)
+                      : const Icon(Icons.location_searching),
+                ),
+              ),
             ),
             RichAttributionWidget(
               showFlutterMapAttribution: false,
