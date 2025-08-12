@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:retur_ro/api/fake_api.dart';
 import 'package:retur_ro/location_cache.dart';
 
@@ -19,6 +20,7 @@ class _HomePageState extends State<HomePage> {
   final MapController _mapController = MapController();
 
   bool _isBottomSheetExpanded = false;
+  bool _isBottomSheetCollapsed = false;
   VoidCallback? _positionListener;
 
   @override
@@ -43,9 +45,14 @@ class _HomePageState extends State<HomePage> {
 
   void _updateBottomSheetState() {
     final isExpanded = _sheetController.size > 0.3;
-    if (isExpanded != _isBottomSheetExpanded) {
+    final isCollapsed =
+        _sheetController.size <= 0.01; // Detect when fully collapsed
+
+    if (isExpanded != _isBottomSheetExpanded ||
+        isCollapsed != _isBottomSheetCollapsed) {
       setState(() {
         _isBottomSheetExpanded = isExpanded;
+        _isBottomSheetCollapsed = isCollapsed;
       });
     }
   }
@@ -62,9 +69,17 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _toggleBottomSheet() {
-    final targetSize = _isBottomSheetExpanded ? 0.1 : 0.6;
+    final targetSize = _isBottomSheetExpanded ? 0.13 : 0.6;
     _sheetController.animateTo(
       targetSize,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  void _expandBottomSheet() {
+    _sheetController.animateTo(
+      0.25,
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
     );
@@ -96,18 +111,46 @@ class _HomePageState extends State<HomePage> {
                   markers: [
                     Marker(
                       point: LatLng(position.latitude, position.longitude),
-                      child: const Icon(Icons.my_location, color: Colors.blueAccent),
+                      child: const Icon(
+                        Icons.my_location,
+                        color: Colors.blueAccent,
+                      ),
                     ),
                   ],
                 );
               },
             ),
+            RichAttributionWidget(
+              showFlutterMapAttribution: false,
+              alignment: AttributionAlignment.bottomLeft,
+              attributions: [
+                // Suggested attribution for the OpenStreetMap public tile server
+                TextSourceAttribution(
+                  'OpenStreetMap contributors',
+                  onTap: () => launchUrl(
+                    Uri.parse('https://openstreetmap.org/copyright'),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
+        // Floating action button to expand sheet when collapsed
+        if (_isBottomSheetCollapsed)
+          Positioned(
+            bottom: 20,
+            right: 20,
+            child: FloatingActionButton(
+              onPressed: _expandBottomSheet,
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
+              child: const Icon(Icons.keyboard_arrow_up),
+            ),
+          ),
         DraggableScrollableSheet(
           controller: _sheetController,
           initialChildSize: 0.25,
-          minChildSize: 0.10,
+          minChildSize: 0,
           maxChildSize: 1,
           expand: true,
           builder: (BuildContext context, ScrollController scrollController) {
