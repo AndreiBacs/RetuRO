@@ -66,6 +66,8 @@ class _HomePageState extends State<HomePage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _widgetHeight = context.size?.height ?? 0;
       _fabPositionNotifier.value = _sheetExtent * _widgetHeight;
+      // Initialize the bottom sheet expansion state
+      _isBottomSheetExpandedNotifier.value = _sheetExtent > 0.3;
     });
 
     // Add listener to sheet controller to ensure FAB position stays in sync
