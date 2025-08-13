@@ -37,6 +37,12 @@ class _HomePageState extends State<HomePage> {
   double _widgetHeight = 0;
   final ValueNotifier<double> _fabPositionNotifier = ValueNotifier<double>(0);
   final double _fabPositionPadding = 20.0;
+  
+  // Add ValueNotifier to track bottom sheet expansion state
+  final ValueNotifier<bool> _isBottomSheetExpandedNotifier = ValueNotifier<bool>(false);
+  
+  // Add ValueNotifier to track bottom sheet collapsed state
+  final ValueNotifier<bool> _isBottomSheetCollapsedNotifier = ValueNotifier<bool>(false);
 
   @override
   void initState() {
@@ -68,10 +74,17 @@ class _HomePageState extends State<HomePage> {
       _fabPositionNotifier.value = _sheetExtent * _widgetHeight;
       // Initialize the bottom sheet expansion state
       _isBottomSheetExpandedNotifier.value = _sheetExtent > 0.3;
+      // Initialize the bottom sheet collapsed state
+      _isBottomSheetCollapsedNotifier.value = _sheetExtent <= 0.0;
     });
 
     // Add listener to sheet controller to ensure FAB position stays in sync
-    _sheetController.addListener(_updateFabPosition);
+    _sheetController.addListener(() {
+      _updateFabPosition();
+      // Also update sheet state directly from controller for fast swipes
+      final extent = _sheetController.size;
+      _updateSheetState(extent);
+    });
   }
 
   // Add method to fetch places data
@@ -109,17 +122,21 @@ class _HomePageState extends State<HomePage> {
     _mapController.dispose();
     _alignPositionStreamController.close();
     _fabPositionNotifier.dispose();
+    _isBottomSheetExpandedNotifier.dispose();
+    _isBottomSheetCollapsedNotifier.dispose();
     super.dispose();
   }
 
   void _toggleBottomSheet() {
     final isBottomSheetExpanded = _sheetExtent > 0.3;
-    final targetSize = isBottomSheetExpanded ? 0.13 : 0.6;
+    final targetSize = isBottomSheetExpanded ? 0.25 : 0.6;
     _sheetController.animateTo(
       targetSize,
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
     );
+    // Update the ValueNotifier to trigger rebuild
+    _isBottomSheetExpandedNotifier.value = !isBottomSheetExpanded;
   }
 
   void _expandBottomSheet() {
@@ -138,14 +155,25 @@ class _HomePageState extends State<HomePage> {
       } else {
         _fabPositionNotifier.value = extent * _widgetHeight;
       }
+      // Also update the sheet state when FAB position updates
+      _updateSheetState(extent);
     }
+  }
+
+  void _updateSheetState(double extent) {
+    _sheetExtent = extent;
+    // Use Future.microtask to ensure state updates are processed in the next frame
+    Future.microtask(() {
+      if (mounted) {
+        _isBottomSheetExpandedNotifier.value = extent > 0.3;
+        _isBottomSheetCollapsedNotifier.value = extent <= 0.0;
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     const double minChildSize = 0.00;
-    final isBottomSheetCollapsed = _sheetExtent <= minChildSize;
-    final isBottomSheetExpanded = _sheetExtent > 0.3;
 
     return Stack(
       children: [
@@ -211,29 +239,34 @@ class _HomePageState extends State<HomePage> {
           },
         ),
         // Floating action button to expand sheet when collapsed
-        if (isBottomSheetCollapsed)
-          ValueListenableBuilder<double>(
-            valueListenable: _fabPositionNotifier,
-            builder: (context, fabPosition, child) {
-              return Positioned(
-                bottom:
-                    fabPosition +
-                    _fabPositionPadding +
-                    80, // Position above the location FAB
-                right: 20,
-                child: FloatingActionButton(
-                  onPressed: _expandBottomSheet,
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                  child: const Icon(Icons.keyboard_arrow_up),
-                ),
-              );
-            },
-          ),
+        ValueListenableBuilder<bool>(
+          valueListenable: _isBottomSheetCollapsedNotifier,
+          builder: (context, isCollapsed, child) {
+            if (!isCollapsed) return const SizedBox.shrink();
+            return ValueListenableBuilder<double>(
+              valueListenable: _fabPositionNotifier,
+              builder: (context, fabPosition, child) {
+                return Positioned(
+                  bottom:
+                      fabPosition +
+                      _fabPositionPadding +
+                      80, // Position above the location FAB
+                  right: 20,
+                  child: FloatingActionButton(
+                    onPressed: _expandBottomSheet,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                    child: const Icon(Icons.keyboard_arrow_up),
+                  ),
+                );
+              },
+            );
+          },
+        ),
         NotificationListener<DraggableScrollableNotification>(
           onNotification: (notification) {
             _widgetHeight = context.size?.height ?? 0;
-            _sheetExtent = notification.extent;
+            _updateSheetState(notification.extent);
             _updateFabPosition();
             return true;
           },
@@ -328,15 +361,20 @@ class _HomePageState extends State<HomePage> {
                               ],
                             ),
                           ),
-                          IconButton(
-                            onPressed: _toggleBottomSheet,
-                            icon: Icon(
-                              isBottomSheetExpanded
-                                  ? Icons.keyboard_arrow_down
-                                  : Icons.keyboard_arrow_up,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                          ),
+                                                     ValueListenableBuilder<bool>(
+                             valueListenable: _isBottomSheetExpandedNotifier,
+                             builder: (context, isExpanded, child) {
+                               return IconButton(
+                                 onPressed: _toggleBottomSheet,
+                                 icon: Icon(
+                                   isExpanded
+                                       ? Icons.keyboard_arrow_down
+                                       : Icons.keyboard_arrow_up,
+                                   color: Theme.of(context).colorScheme.primary,
+                                 ),
+                               );
+                             },
+                           ),
                         ],
                       ),
                     ),
