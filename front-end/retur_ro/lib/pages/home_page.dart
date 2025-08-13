@@ -141,7 +141,8 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final isBottomSheetCollapsed = _sheetExtent <= 0.01;
+    const double minChildSize = 0.00;
+    final isBottomSheetCollapsed = _sheetExtent <= minChildSize;
     final isBottomSheetExpanded = _sheetExtent > 0.3;
 
     return Stack(
@@ -192,7 +193,7 @@ class _HomePageState extends State<HomePage> {
           builder: (context, fabPosition, child) {
             return Positioned(
               bottom: fabPosition + _fabPositionPadding,
-              right: _fabPositionPadding,
+              right: 20,
               child: FloatingActionButton(
                 onPressed: () {
                   setState(() {
@@ -217,7 +218,7 @@ class _HomePageState extends State<HomePage> {
                     fabPosition +
                     _fabPositionPadding +
                     80, // Position above the location FAB
-                right: _fabPositionPadding,
+                right: 20,
                 child: FloatingActionButton(
                   onPressed: _expandBottomSheet,
                   backgroundColor: Theme.of(context).colorScheme.primary,
@@ -231,20 +232,13 @@ class _HomePageState extends State<HomePage> {
           onNotification: (notification) {
             _widgetHeight = context.size?.height ?? 0;
             _sheetExtent = notification.extent;
-            // Calculate FAB position based on parent widget height and DraggableScrollable position
-            // Lock FAB position when sheet reaches 0.45 to allow sheet to scroll over it
-            // But always update when sheet goes below 0.45 to ensure proper following
-            if (_sheetExtent >= 0.45) {
-              _fabPositionNotifier.value = 0.45 * _widgetHeight;
-            } else {
-              _fabPositionNotifier.value = _sheetExtent * _widgetHeight;
-            }
+            _updateFabPosition();
             return true;
           },
           child: DraggableScrollableSheet(
             controller: _sheetController,
             initialChildSize: 0.25,
-            minChildSize: 0.25,
+            minChildSize: minChildSize,
             maxChildSize: 0.95,
             expand: true,
             builder: (BuildContext context, ScrollController scrollController) {
