@@ -75,6 +75,7 @@ class _HomePageState extends State<HomePage> {
   // Add method to fetch places data
   Future<void> _fetchPlacesData() async {
     try {
+      if (!mounted) return;
       setState(() {
         _isLoadingPlaces = true;
         _placesError = null;
@@ -82,11 +83,13 @@ class _HomePageState extends State<HomePage> {
 
       final places = await FakeApi.searchAddresses('a');
 
+      if (!mounted) return;
       setState(() {
         _places = places.toList();
         _isLoadingPlaces = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _placesError = e.toString();
         _isLoadingPlaces = false;
