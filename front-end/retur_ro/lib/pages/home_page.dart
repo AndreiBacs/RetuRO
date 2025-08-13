@@ -199,7 +199,7 @@ class _HomePageState extends State<HomePage> {
                   setState(() {
                     _alignPositionOnUpdate = AlignOnUpdate.always;
                   });
-                  _alignPositionStreamController.add(20);
+                  _alignPositionStreamController.add(15.0);
                 },
                 child: _alignPositionOnUpdate == AlignOnUpdate.always
                     ? const Icon(Icons.my_location)
