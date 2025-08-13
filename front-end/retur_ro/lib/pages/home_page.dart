@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:geolocator/geolocator.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:retur_ro/api/fake_api.dart';
 import 'package:retur_ro/location_cache.dart';
+import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -18,15 +21,37 @@ class _HomePageState extends State<HomePage> {
   final LocationCache _locationCache = LocationCache();
   final MapController _mapController = MapController();
 
-  bool _isBottomSheetExpanded = false;
+  double _sheetExtent = 0.25; // Corresponds to initialChildSize
+
   VoidCallback? _positionListener;
+
+  // Add state variables for places data
+  List<String> _places = [];
+  bool _isLoadingPlaces = true;
+  String? _placesError;
+
+  late AlignOnUpdate _alignPositionOnUpdate;
+  late final StreamController<double?> _alignPositionStreamController;
+
+  // Add variables for FAB positioning
+  double _widgetHeight = 0;
+  final ValueNotifier<double> _fabPositionNotifier = ValueNotifier<double>(0);
+  final double _fabPositionPadding = 20.0;
+  
+  // Add ValueNotifier to track bottom sheet expansion state
+  final ValueNotifier<bool> _isBottomSheetExpandedNotifier = ValueNotifier<bool>(false);
+  
+  // Add ValueNotifier to track bottom sheet collapsed state
+  final ValueNotifier<bool> _isBottomSheetCollapsedNotifier = ValueNotifier<bool>(false);
 
   @override
   void initState() {
     super.initState();
-    _sheetController.addListener(_updateBottomSheetState);
     // Initial location fetch, if not already loaded
     _locationCache.getLocation();
+
+    // Fetch places data on initialization
+    _fetchPlacesData();
 
     // Listen for position changes and move map
     _positionListener = () {
@@ -39,39 +64,117 @@ class _HomePageState extends State<HomePage> {
       }
     };
     _locationCache.position.addListener(_positionListener!);
+
+    _alignPositionOnUpdate = AlignOnUpdate.always;
+    _alignPositionStreamController = StreamController<double?>();
+
+    // Initialize FAB position after the widget is built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _widgetHeight = context.size?.height ?? 0;
+      _fabPositionNotifier.value = _sheetExtent * _widgetHeight;
+      // Initialize the bottom sheet expansion state
+      _isBottomSheetExpandedNotifier.value = _sheetExtent > 0.3;
+      // Initialize the bottom sheet collapsed state
+      _isBottomSheetCollapsedNotifier.value = _sheetExtent <= 0.0;
+    });
+
+    // Add listener to sheet controller to ensure FAB position stays in sync
+    _sheetController.addListener(() {
+      _updateFabPosition();
+      // Also update sheet state directly from controller for fast swipes
+      final extent = _sheetController.size;
+      _updateSheetState(extent);
+    });
   }
 
-  void _updateBottomSheetState() {
-    final isExpanded = _sheetController.size > 0.3;
-    if (isExpanded != _isBottomSheetExpanded) {
+  // Add method to fetch places data
+  Future<void> _fetchPlacesData() async {
+    try {
+      if (!mounted) return;
       setState(() {
-        _isBottomSheetExpanded = isExpanded;
+        _isLoadingPlaces = true;
+        _placesError = null;
+      });
+
+      final places = await FakeApi.searchAddresses('a');
+
+      if (!mounted) return;
+      setState(() {
+        _places = places.toList();
+        _isLoadingPlaces = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _placesError = e.toString();
+        _isLoadingPlaces = false;
       });
     }
   }
 
   @override
   void dispose() {
-    _sheetController.removeListener(_updateBottomSheetState);
     if (_positionListener != null) {
       _locationCache.position.removeListener(_positionListener!);
     }
+    _sheetController.removeListener(_updateFabPosition);
     _sheetController.dispose();
     _mapController.dispose();
+    _alignPositionStreamController.close();
+    _fabPositionNotifier.dispose();
+    _isBottomSheetExpandedNotifier.dispose();
+    _isBottomSheetCollapsedNotifier.dispose();
     super.dispose();
   }
 
   void _toggleBottomSheet() {
-    final targetSize = _isBottomSheetExpanded ? 0.1 : 0.6;
+    final isBottomSheetExpanded = _sheetExtent > 0.3;
+    final targetSize = isBottomSheetExpanded ? 0.25 : 0.6;
     _sheetController.animateTo(
       targetSize,
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
     );
+    // Update the ValueNotifier to trigger rebuild
+    _isBottomSheetExpandedNotifier.value = !isBottomSheetExpanded;
+  }
+
+  void _expandBottomSheet() {
+    _sheetController.animateTo(
+      0.25,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  void _updateFabPosition() {
+    if (_widgetHeight > 0) {
+      final extent = _sheetController.size;
+      if (extent >= 0.45) {
+        _fabPositionNotifier.value = 0.45 * _widgetHeight;
+      } else {
+        _fabPositionNotifier.value = extent * _widgetHeight;
+      }
+      // Also update the sheet state when FAB position updates
+      _updateSheetState(extent);
+    }
+  }
+
+  void _updateSheetState(double extent) {
+    _sheetExtent = extent;
+    // Use Future.microtask to ensure state updates are processed in the next frame
+    Future.microtask(() {
+      if (mounted) {
+        _isBottomSheetExpandedNotifier.value = extent > 0.3;
+        _isBottomSheetCollapsedNotifier.value = extent <= 0.0;
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    const double minChildSize = 0.00;
+
     return Stack(
       children: [
         FlutterMap(
@@ -82,164 +185,226 @@ class _HomePageState extends State<HomePage> {
               _locationCache.position.value?.longitude ?? 26.1025,
             ), // Bucharest coordinates
             initialZoom: 15,
+            onPositionChanged: (position, hasGesture) {
+              if (hasGesture && _alignPositionOnUpdate != AlignOnUpdate.never) {
+                setState(() {
+                  _alignPositionOnUpdate = AlignOnUpdate.never;
+                });
+              }
+            },
           ),
           children: [
             TileLayer(
               urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
               userAgentPackageName: 'com.example.retur_ro',
             ),
-            ValueListenableBuilder<Position?>(
-              valueListenable: _locationCache.position,
-              builder: (context, position, child) {
-                if (position == null) return const MarkerLayer(markers: []);
-                return MarkerLayer(
-                  markers: [
-                    Marker(
-                      point: LatLng(position.latitude, position.longitude),
-                      child: const Icon(Icons.my_location, color: Colors.blueAccent),
-                    ),
-                  ],
-                );
-              },
+            CurrentLocationLayer(
+              alignPositionStream: _alignPositionStreamController.stream,
+              alignPositionOnUpdate: _alignPositionOnUpdate,
+            ),
+            RichAttributionWidget(
+              showFlutterMapAttribution: false,
+              alignment: AttributionAlignment.bottomLeft,
+              attributions: [
+                // Suggested attribution for the OpenStreetMap public tile server
+                TextSourceAttribution(
+                  'OpenStreetMap contributors',
+                  onTap: () => launchUrl(
+                    Uri.parse('https://openstreetmap.org/copyright'),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
-        DraggableScrollableSheet(
-          controller: _sheetController,
-          initialChildSize: 0.25,
-          minChildSize: 0.10,
-          maxChildSize: 1,
-          expand: true,
-          builder: (BuildContext context, ScrollController scrollController) {
-            return Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(20),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, -2),
-                  ),
-                ],
+        // Location FAB - positioned before DraggableScrollableSheet to appear behind it
+        ValueListenableBuilder<double>(
+          valueListenable: _fabPositionNotifier,
+          builder: (context, fabPosition, child) {
+            return Positioned(
+              bottom: fabPosition + _fabPositionPadding,
+              right: 20,
+              child: FloatingActionButton(
+                onPressed: () {
+                  setState(() {
+                    _alignPositionOnUpdate = AlignOnUpdate.always;
+                  });
+                  _alignPositionStreamController.add(15.0);
+                },
+                child: _alignPositionOnUpdate == AlignOnUpdate.always
+                    ? const Icon(Icons.my_location)
+                    : const Icon(Icons.location_searching),
               ),
-              child: ListView(
-                controller: scrollController,
-                children: [
-                  // Handle bar
-                  Center(
-                    child: Container(
-                      margin: const EdgeInsets.only(top: 8, bottom: 8),
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[300],
-                        borderRadius: BorderRadius.circular(2),
+            );
+          },
+        ),
+        // Floating action button to expand sheet when collapsed
+        ValueListenableBuilder<bool>(
+          valueListenable: _isBottomSheetCollapsedNotifier,
+          builder: (context, isCollapsed, child) {
+            if (!isCollapsed) return const SizedBox.shrink();
+            return ValueListenableBuilder<double>(
+              valueListenable: _fabPositionNotifier,
+              builder: (context, fabPosition, child) {
+                return Positioned(
+                  bottom:
+                      fabPosition +
+                      _fabPositionPadding +
+                      80, // Position above the location FAB
+                  right: 20,
+                  child: FloatingActionButton(
+                    onPressed: _expandBottomSheet,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                    child: const Icon(Icons.keyboard_arrow_up),
+                  ),
+                );
+              },
+            );
+          },
+        ),
+        NotificationListener<DraggableScrollableNotification>(
+          onNotification: (notification) {
+            _widgetHeight = context.size?.height ?? 0;
+            _updateSheetState(notification.extent);
+            _updateFabPosition();
+            return true;
+          },
+          child: DraggableScrollableSheet(
+            controller: _sheetController,
+            initialChildSize: 0.25,
+            minChildSize: minChildSize,
+            maxChildSize: 0.95,
+            expand: true,
+            builder: (BuildContext context, ScrollController scrollController) {
+              return Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(20),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, -2),
+                    ),
+                  ],
+                ),
+                child: ListView(
+                  controller: scrollController,
+                  children: [
+                    // Handle bar
+                    Center(
+                      child: Container(
+                        margin: const EdgeInsets.only(top: 8, bottom: 8),
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(2),
+                        ),
                       ),
                     ),
-                  ),
-                  // Header
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Row(
-                      children: [
-                        ValueListenableBuilder<bool>(
-                          valueListenable: _locationCache.isLoading,
-                          builder: (context, isLoading, child) {
-                            return IconButton(
-                              icon: Icon(
-                                Icons.location_on,
-                                color: Theme.of(context).colorScheme.primary,
-                                size: 24,
-                              ),
-                              onPressed: isLoading
-                                  ? null
-                                  : () => _locationCache.getLocation(
-                                      forceRefresh: true,
-                                    ),
-                            );
-                          },
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Current Location',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurface,
+                    // Header
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Row(
+                        children: [
+                          ValueListenableBuilder<bool>(
+                            valueListenable: _locationCache.isLoading,
+                            builder: (context, isLoading, child) {
+                              return IconButton(
+                                icon: Icon(
+                                  Icons.location_on,
+                                  color: Theme.of(context).colorScheme.primary,
+                                  size: 24,
                                 ),
-                              ),
-                              ValueListenableBuilder<String?>(
-                                valueListenable: _locationCache.address,
-                                builder: (context, address, child) {
-                                  return Text(
-                                    address ?? 'Loading...',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurface
-                                          .withValues(alpha: 0.7),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ],
+                                onPressed: isLoading
+                                    ? null
+                                    : () => _locationCache.getLocation(
+                                        forceRefresh: true,
+                                      ),
+                              );
+                            },
                           ),
-                        ),
-                        IconButton(
-                          onPressed: _toggleBottomSheet,
-                          icon: Icon(
-                            _isBottomSheetExpanded
-                                ? Icons.keyboard_arrow_down
-                                : Icons.keyboard_arrow_up,
-                            color: Theme.of(context).colorScheme.primary,
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Current Location',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface,
+                                  ),
+                                ),
+                                ValueListenableBuilder<String?>(
+                                  valueListenable: _locationCache.address,
+                                  builder: (context, address, child) {
+                                    return Text(
+                                      address ?? 'Loading...',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withValues(alpha: 0.7),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
+                                                     ValueListenableBuilder<bool>(
+                             valueListenable: _isBottomSheetExpandedNotifier,
+                             builder: (context, isExpanded, child) {
+                               return IconButton(
+                                 onPressed: _toggleBottomSheet,
+                                 icon: Icon(
+                                   isExpanded
+                                       ? Icons.keyboard_arrow_down
+                                       : Icons.keyboard_arrow_up,
+                                   color: Theme.of(context).colorScheme.primary,
+                                 ),
+                               );
+                             },
+                           ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  // Content
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Nearby Places',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                            color: Theme.of(context).colorScheme.onSurface,
+                    const SizedBox(height: 16),
+                    // Content
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Nearby Places',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 16),
-                        FutureBuilder<Iterable<String>>(
-                          future: FakeApi.searchAddresses('a'),
-                          builder: (context, snapshot) {
-                            if (snapshot.connectionState ==
-                                ConnectionState.waiting) {
-                              return const Center(
-                                child: CircularProgressIndicator(),
-                              );
-                            }
-                            if (snapshot.hasError) {
-                              return const Center(
-                                child: Text('Error fetching data'),
-                              );
-                            }
-                            final places = snapshot.data!.toList();
-                            return Column(
-                              children: places
+                          const SizedBox(height: 16),
+                          if (_isLoadingPlaces)
+                            const Center(child: CircularProgressIndicator())
+                          else if (_placesError != null)
+                            Center(
+                              child: Text(
+                                'Error fetching places: $_placesError',
+                              ),
+                            )
+                          else
+                            Column(
+                              children: _places
                                   .map(
                                     (place) => _buildPlaceItem(
                                       place,
@@ -248,16 +413,15 @@ class _HomePageState extends State<HomePage> {
                                     ),
                                   )
                                   .toList(),
-                            );
-                          },
-                        ),
-                      ],
+                            ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            );
-          },
+                  ],
+                ),
+              );
+            },
+          ),
         ),
       ],
     );
