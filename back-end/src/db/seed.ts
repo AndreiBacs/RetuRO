@@ -7,7 +7,9 @@ import {
   machine_status_details,
   connection_status,
   tomraEvents,
+  barcodes,
 } from "./schema.ts";
+import { parse } from "csv-parse";
 
 export async function seedDatabase() {
   console.log("🌱 Starting database seeding...");
@@ -22,6 +24,7 @@ export async function seedDatabase() {
     await db.delete(locations);
     await db.delete(producers);
     await db.delete(tomraEvents);
+    await db.delete(barcodes);
 
     // Seed Producers
     console.log("🏭 Seeding producers...");
@@ -128,9 +131,82 @@ export async function seedDatabase() {
       .returning();
     console.log(`✅ Inserted ${insertedLocations.length} locations`);
 
+    // Seed Barcodes from CSV file
+    console.log("📊 Reading barcodes from CSV file...");
+    let insertedBarcodes: any[] = [];
+    
+    try {
+      const csvPath = "./assets/Coduri inregistrate in Registrul Ambalajelor_11.08.2025.csv";
+      const csvContent = await Deno.readTextFile(csvPath);
+      
+      const barcodeData: { barcode: string; status: string }[] = [];
+      let rowCount = 0;
+
+      // Parse CSV content
+      const parser = parse(csvContent, {
+        columns: true, // Use first row as headers
+        skip_empty_lines: true,
+      });
+
+      for await (const record of parser) {
+        rowCount++;
+        const barcode = record.Barcode || record.barcode || "";
+        const status = record.Status || record.status || "";
+        
+        if (barcode && status) {
+          barcodeData.push({ barcode, status });
+        }
+      }
+
+      console.log(`📋 Found ${rowCount} rows in CSV file`);
+      console.log(`📦 Processed ${barcodeData.length} valid barcode entries`);
+
+      if (barcodeData.length > 0) {
+        // Insert in batches to avoid memory issues
+        const batchSize = 1000;
+        let totalInserted = 0;
+        
+        for (let i = 0; i < barcodeData.length; i += batchSize) {
+          const batch = barcodeData.slice(i, i + batchSize);
+          const batchResult = await db
+            .insert(barcodes)
+            .values(batch)
+            .returning();
+          totalInserted += batchResult.length;
+          console.log(`📦 Inserted batch ${Math.floor(i / batchSize) + 1}: ${batchResult.length} records`);
+        }
+        
+        insertedBarcodes = Array(totalInserted).fill({}); // Create array for summary
+        console.log(`✅ Inserted ${totalInserted} barcodes from CSV file`);
+      } else {
+        console.log("⚠️ No valid barcode data found in CSV file");
+      }
+    } catch (csvError) {
+      console.error("❌ Error reading CSV file:", csvError);
+      console.log(
+        "💡 Make sure the CSV file exists at: ./assets/Coduri inregistrate in Registrul Ambalajelor_11.08.2025.csv"
+      );
+      console.log("📊 Using fallback sample data...");
+
+      // Fallback to sample data if CSV reading fails
+      const fallbackData = [
+        { barcode: "5941234567890", status: "active" },
+        { barcode: "5941234567891", status: "active" },
+        { barcode: "5941234567892", status: "inactive" },
+      ];
+
+      insertedBarcodes = await db
+        .insert(barcodes)
+        .values(fallbackData)
+        .returning();
+      console.log(`✅ Inserted ${insertedBarcodes.length} fallback barcodes`);
+    }
+
     console.log("🎉 Database seeding completed successfully!");
     console.log("\n📊 Summary:");
     console.log(`   - ${insertedProducers.length} producers`);
+    console.log(`   - ${insertedLocations.length} locations`);
+    console.log(`   - ${insertedBarcodes.length} barcodes`);
   } catch (error) {
     console.error("❌ Error seeding database:", error);
     throw error;

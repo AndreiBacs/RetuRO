@@ -33,6 +33,15 @@ The seed file creates realistic test data for:
 - ValuePack România (Romania)
 - RomCooling (Romania)
 
+### Locations (2 records)
+- Kaufland Oradea-Rogerius
+- Lidl Oradea-Rogerius
+
+### Barcodes (from Excel file)
+- Reads from: `assets/Coduri inregistrate in Registrul Ambalajelor_11.08.2025.xlsx`
+- Columns: barcode, status
+- Automatically processes all valid entries
+
 ## Data Relationships
 
 The seed data creates a realistic scenario with Romanian RVM producers:
@@ -41,6 +50,14 @@ The seed data creates a realistic scenario with Romanian RVM producers:
 - Envipco România - European factory producing RVMs locally
 - ValuePack România - Romanian packaging and recycling solutions
 - RomCooling - Romanian cooling and refrigeration solutions
+
+## Excel File Processing
+
+The seed automatically reads barcode data from the Excel file:
+- **File**: `assets/Coduri inregistrate in Registrul Ambalajelor_11.08.2025.xlsx`
+- **Expected columns**: `barcode` and `status`
+- **Processing**: Automatically filters out empty rows and handles case variations
+- **Error handling**: Graceful fallback if file is missing or corrupted
 
 ## Customization
 

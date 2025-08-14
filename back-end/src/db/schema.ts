@@ -197,6 +197,7 @@ export const connectionStatusRelations = relations(
 export const barcodes = pgTable("barcodes", {
   id: serial("id").primaryKey(),
   barcode: varchar("barcode", { length: 256 }).notNull(),
+  status: text("status").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
