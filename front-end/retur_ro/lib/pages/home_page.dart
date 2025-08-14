@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -8,6 +9,7 @@ import 'package:retur_ro/api/fake_api.dart';
 import 'package:retur_ro/location_cache.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -47,6 +49,9 @@ class _HomePageState extends State<HomePage> {
   final ValueNotifier<bool> _isBottomSheetCollapsedNotifier =
       ValueNotifier<bool>(false);
 
+  static final _random = Random(42);
+  List<Marker> _markers = [];
+
   @override
   void initState() {
     super.initState();
@@ -63,6 +68,16 @@ class _HomePageState extends State<HomePage> {
         _mapController.move(
           LatLng(position.latitude, position.longitude),
           13.0,
+        );
+        _markers = List<Marker>.generate(
+          20,
+          (_) => Marker(
+            child: const Icon(Icons.location_on),
+            point: LatLng(
+              _random.nextDouble() * 0.02 - 0.01 + position.latitude,
+              _random.nextDouble() * 0.02 - 0.01 + position.longitude,
+            ),
+          ),
         );
       }
     };
@@ -207,6 +222,31 @@ class _HomePageState extends State<HomePage> {
                   ? darkModeTileBuilder
                   : null,
               userAgentPackageName: 'com.example.retur_ro',
+            ),
+            MarkerClusterLayerWidget(
+              options: MarkerClusterLayerOptions(
+                maxClusterRadius: 50,
+                size: const Size(40, 40),
+                alignment: Alignment.center,
+                padding: const EdgeInsets.all(50),
+                maxZoom: 15,
+                markers: _markers,
+                showPolygon: false,
+                builder: (context, markers) {
+                  return Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      color: Colors.blue,
+                    ),
+                    child: Center(
+                      child: Text(
+                        markers.length.toString(),
+                        style: const TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
             CurrentLocationLayer(
               alignPositionStream: _alignPositionStreamController.stream,
