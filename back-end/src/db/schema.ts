@@ -121,30 +121,33 @@ export const machineStatusRelations = relations(
 );
 
 // Machine Status Details:
-export const machine_status_details_enum = pgEnum("machine_status_details_enum", [
-  "chamberBlocked",
-  "closed",
-  "closedUpdate",
-  "emergency",
-  "emptyingBin",
-  "errorBackroom",
-  "errorOther",
-  "frontDoorOpen",
-  "fullBin",
-  "fullConveyor",
-  "fullTable",
-  "printerOutOfPaper",
-  "printerStoreResolvable",
-  "printerOther",
-  "standby",
-  "temporaryClosed",
-  "temporaryClosedRearDoorOpen",
-  "temporaryClosedMachineBeingEmptied",
-  "temporaryClosedResetButton",
-  "temporaryClosedNeedsEmptying",
-  "temporaryClosedBackroomNotReady",
-  "other",
-]);
+export const machine_status_details_enum = pgEnum(
+  "machine_status_details_enum",
+  [
+    "chamberBlocked",
+    "closed",
+    "closedUpdate",
+    "emergency",
+    "emptyingBin",
+    "errorBackroom",
+    "errorOther",
+    "frontDoorOpen",
+    "fullBin",
+    "fullConveyor",
+    "fullTable",
+    "printerOutOfPaper",
+    "printerStoreResolvable",
+    "printerOther",
+    "standby",
+    "temporaryClosed",
+    "temporaryClosedRearDoorOpen",
+    "temporaryClosedMachineBeingEmptied",
+    "temporaryClosedResetButton",
+    "temporaryClosedNeedsEmptying",
+    "temporaryClosedBackroomNotReady",
+    "other",
+  ]
+);
 export const machine_status_details = pgTable("machine_status_details", {
   id: serial("id").primaryKey(),
   machine_status_id: integer("machine_status_id")
@@ -190,3 +193,10 @@ export const connectionStatusRelations = relations(
     }),
   })
 );
+
+export const barcodes = pgTable("barcodes", {
+  id: serial("id").primaryKey(),
+  barcode: varchar("barcode", { length: 256 }).notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
