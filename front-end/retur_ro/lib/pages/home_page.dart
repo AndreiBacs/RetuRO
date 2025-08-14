@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -8,6 +9,8 @@ import 'package:retur_ro/api/fake_api.dart';
 import 'package:retur_ro/location_cache.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
+import 'package:flutter_map_compass/flutter_map_compass.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -47,6 +50,9 @@ class _HomePageState extends State<HomePage> {
   final ValueNotifier<bool> _isBottomSheetCollapsedNotifier =
       ValueNotifier<bool>(false);
 
+  static final _random = Random(42);
+  List<Marker> _markers = [];
+
   @override
   void initState() {
     super.initState();
@@ -59,11 +65,12 @@ class _HomePageState extends State<HomePage> {
     // Listen for position changes and move map
     _positionListener = () {
       final position = _locationCache.position.value;
-      if (position != null) {
+      if (position != null && mounted) {
         _mapController.move(
           LatLng(position.latitude, position.longitude),
           13.0,
         );
+        _updateMarkers(position);
       }
     };
     _locationCache.position.addListener(_positionListener!);
@@ -79,6 +86,12 @@ class _HomePageState extends State<HomePage> {
       _isBottomSheetExpandedNotifier.value = _sheetExtent > 0.3;
       // Initialize the bottom sheet collapsed state
       _isBottomSheetCollapsedNotifier.value = _sheetExtent <= 0.0;
+      
+      // Initialize markers if position is already available
+      final currentPosition = _locationCache.position.value;
+      if (currentPosition != null) {
+        _updateMarkers(currentPosition);
+      }
     });
 
     // Add listener to sheet controller to ensure FAB position stays in sync
@@ -113,6 +126,37 @@ class _HomePageState extends State<HomePage> {
         _isLoadingPlaces = false;
       });
     }
+  }
+
+  // Method to update markers with stable positions
+  void _updateMarkers(dynamic position) {
+    if (!mounted) return;
+    
+    // Store theme color to avoid unsafe context access
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    
+    setState(() {
+      _markers = List<Marker>.generate(
+        20,
+        (index) {
+          // Use index to create more stable marker positions
+          // This prevents markers from "teleporting" on each update
+          final latOffset = (_random.nextDouble() * 0.02 - 0.01) * (index + 1) / 20;
+          final lngOffset = (_random.nextDouble() * 0.02 - 0.01) * (index + 1) / 20;
+          
+          return Marker(
+            child: Icon(
+              Icons.location_on,
+              color: primaryColor,
+            ),
+            point: LatLng(
+              position.latitude + latOffset,
+              position.longitude + lngOffset,
+            ),
+          );
+        },
+      );
+    });
   }
 
   @override
@@ -211,6 +255,49 @@ class _HomePageState extends State<HomePage> {
             CurrentLocationLayer(
               alignPositionStream: _alignPositionStreamController.stream,
               alignPositionOnUpdate: _alignPositionOnUpdate,
+            ),
+            MarkerClusterLayerWidget(
+              options: MarkerClusterLayerOptions(
+                maxClusterRadius: 50,
+                size: const Size(40, 40),
+                alignment: Alignment.center,
+                padding: const EdgeInsets.all(50),
+                maxZoom: 15,
+                markers: _markers,
+                showPolygon: false,
+                builder: (context, markers) {
+                  return Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    child: Center(
+                      child: Text(
+                        markers.length.toString(),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onPrimary,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            MapCompass(
+              rotationOffset: -45,
+              icon: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Icon(
+                    Icons.explore_outlined,
+                    color: Theme.of(context).colorScheme.primary,
+                    size: 50,
+                  ),
+                  Icon(Icons.explore, color: Colors.white54, size: 50),
+                  Icon(Icons.circle_outlined, color: Colors.black, size: 50),
+                ],
+              ),
+              hideIfRotatedNorth: true,
             ),
             RichAttributionWidget(
               showFlutterMapAttribution: false,
