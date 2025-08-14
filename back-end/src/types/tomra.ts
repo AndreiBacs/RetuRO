@@ -27,6 +27,7 @@ export interface TomraLocation {
 }
 
 // Machine
+//up, down
 export interface TomraMachine {
   status: string;
   details: TomraMachineDetails[];
