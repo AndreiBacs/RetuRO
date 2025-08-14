@@ -1,6 +1,6 @@
 # RetuRO Backend
 
-A modern Deno-based REST API backend for the RetuRO project, featuring webhook integration and PostgreSQL database support.
+A modern Deno-based REST API backend for the RetuRO project, featuring webhook integration, PostgreSQL database support, and comprehensive Romanian RVM (Reverse Vending Machine) data management.
 
 ## 🚀 Features
 
@@ -13,6 +13,9 @@ A modern Deno-based REST API backend for the RetuRO project, featuring webhook i
 - 🗄️ **Database**: PostgreSQL integration with Drizzle ORM
 - 🔗 **Webhooks**: TOMRA webhook integration with signature verification
 - 📋 **Migration**: Database schema management with Drizzle Kit
+- 🌱 **Data Seeding**: Comprehensive database seeding with Romanian RVM data
+- 📊 **CSV Processing**: Bulk data import from CSV files
+- 🇷🇴 **Romanian Focus**: Specialized for Romanian RVM market
 
 ## 📋 Prerequisites
 
@@ -42,6 +45,11 @@ deno cache src/main.ts
 4. **Run database migrations:**
 ```bash
 deno task db:migrate
+```
+
+5. **Seed the database with Romanian RVM data:**
+```bash
+deno task db:seed
 ```
 
 ## 🏃‍♂️ Running the Application
@@ -88,7 +96,51 @@ deno task db:generate
 
 # Run migrations
 deno task db:migrate
+
+# Seed database with Romanian RVM data
+deno task db:seed
 ```
+
+## 🌱 Database Seeding
+
+The project includes comprehensive database seeding functionality:
+
+### What Gets Seeded
+
+- **5 Romanian RVM Producers**:
+  - TOMRA ROMANIA
+  - RVM Systems România
+  - Envipco România
+  - ValuePack România
+  - RomCooling
+
+- **2 Locations**:
+  - Kaufland Oradea-Rogerius
+  - Lidl Oradea-Rogerius
+
+- **72,000+ Barcodes** (from CSV file):
+  - Reads from: `assets/Coduri inregistrate in Registrul Ambalajelor_11.08.2025.csv`
+  - Batch processing for large datasets
+  - Automatic data validation
+
+### Running the Seed
+
+```bash
+# Seed all data
+deno task db:seed
+
+# Or run directly
+deno run --allow-net --allow-read --allow-env --env-file=env.dev --allow-read=./assets src/db/seed.ts
+```
+
+### CSV Data Processing
+
+The seed automatically processes CSV files with the following features:
+- **Automatic header detection** (Barcode, Status columns)
+- **Batch processing** (1,000 records per batch)
+- **Data validation** (filters empty rows)
+- **Progress tracking** (shows batch progress)
+- **Error handling** (graceful fallback)
 
 ## 🔗 API Endpoints
 
@@ -150,6 +202,8 @@ back-end/
 │   ├── 0000_mean_thor.sql
 │   ├── 0001_user_permissions.sql
 │   └── meta/
+├── assets/             # Data files
+│   └── Coduri inregistrate in Registrul Ambalajelor_11.08.2025.csv
 ├── src/                # Source code
 │   ├── main.ts         # Application entry point
 │   ├── controllers/    # Business logic controllers
@@ -162,7 +216,9 @@ back-end/
 │   │   └── auth.ts
 │   ├── db/            # Database configuration
 │   │   ├── db.ts      # Database connection
-│   │   └── schema.ts  # Database schema
+│   │   ├── schema.ts  # Database schema
+│   │   ├── seed.ts    # Database seeding
+│   │   └── README.md  # Database documentation
 │   ├── types/         # TypeScript type definitions
 │   │   ├── index.ts
 │   │   └── tomra.ts
@@ -190,20 +246,75 @@ CORS_ORIGIN=http://localhost:3000,http://localhost:5173
 
 # TOMRA Webhook
 TOMRA_WEBHOOK_SECRET=your_webhook_secret
+TOMRA_IP=34.140.242.111
 ```
 
 ## 🗄️ Database Schema
 
-### Users Table
+### Core Tables
+
+#### Users Table
 - `id` (serial, primary key)
 - `fullName` (text)
 - `phone` (varchar)
 
-### TOMRA Events Table
+#### TOMRA Events Table
 - `id` (serial, primary key)
 - `receivedOn` (timestamp, default now)
 - `processedOn` (timestamp)
 - `payload` (text)
+
+#### Producers Table
+- `id` (serial, primary key)
+- `name` (text, not null)
+- `address_line_1` (text, not null)
+- `address_line_2` (text)
+- `city` (text, not null)
+- `state` (text, not null)
+- `zip` (varchar, not null)
+- `country` (text, not null)
+- `phone` (varchar)
+- `email` (varchar)
+- `website` (varchar)
+- `createdAt` (timestamp, default now)
+- `updatedAt` (timestamp, default now)
+
+#### Locations Table
+- `id` (serial, primary key)
+- `name` (text, not null)
+- `customer_id` (varchar)
+- `customer_name` (text)
+- `address_line_1` (text, not null)
+- `address_line_2` (text)
+- `city` (text, not null)
+- `state` (text, not null)
+- `zip` (varchar, not null)
+- `country` (text, not null)
+- `latitude` (decimal)
+- `longitude` (decimal)
+- `createdAt` (timestamp, default now)
+- `updatedAt` (timestamp, default now)
+
+#### RVMs Table
+- `id` (serial, primary key)
+- `serial_number` (varchar, not null)
+- `type` (text, not null)
+- `location_id` (integer, foreign key)
+- `producer_id` (integer, foreign key)
+- `createdAt` (timestamp, default now)
+- `updatedAt` (timestamp, default now)
+
+#### Barcodes Table
+- `id` (serial, primary key)
+- `barcode` (varchar, not null)
+- `status` (text, not null)
+- `createdAt` (timestamp, default now)
+- `updatedAt` (timestamp, default now)
+
+#### Machine Status Tables
+- `machine_status` - Machine operational status (up/down)
+- `machine_status_details` - Detailed status reasons
+- `connection_status` - Network connectivity status
 
 ## 🛠️ Development
 
@@ -244,6 +355,19 @@ import { verifySignature } from './utils/signatureVerification.ts';
 const isValid = verifySignature(payload, signature, secret);
 ```
 
+### Database Seeding
+
+To add new seed data:
+
+1. Edit `src/db/seed.ts`
+2. Add your data to the appropriate arrays
+3. Run: `deno task db:seed`
+
+For CSV data:
+1. Place your CSV file in the `assets/` directory
+2. Update the CSV reading logic in `seed.ts`
+3. Run: `deno task db:seed`
+
 ## 📋 Available Tasks
 
 - `deno task dev` - Start development server with hot reload
@@ -261,6 +385,29 @@ const isValid = verifySignature(payload, signature, secret);
 - `deno task clean` - Clean coverage directory
 - `deno task db:generate` - Generate database migrations
 - `deno task db:migrate` - Run database migrations
+- `deno task db:seed` - Seed database with Romanian RVM data
+
+## 🇷🇴 Romanian RVM Market Focus
+
+This backend is specifically designed for the Romanian RVM (Reverse Vending Machine) market:
+
+### Supported Producers
+- **TOMRA ROMANIA** - Global leader in RVM solutions
+- **RVM Systems România** - Local RVM manufacturer with wide product range
+- **Envipco România** - European factory producing RVMs locally
+- **ValuePack România** - Romanian packaging and recycling solutions
+- **RomCooling** - Romanian cooling and refrigeration solutions
+
+### Data Sources
+- **Romanian Packaging Registry** - Official barcode data from Romanian authorities
+- **Local Supermarkets** - Kaufland, Lidl, and other major chains
+- **Real Addresses** - Accurate Romanian addresses and contact information
+
+### Features
+- **Romanian Phone Numbers** (+40 format)
+- **Romanian Postal Codes** (proper format validation)
+- **Romanian Addresses** (accurate city/state/country data)
+- **Local Business Integration** (Romanian companies and locations)
 
 ## 🤝 Contributing
 

@@ -1,7 +1,9 @@
 {
   "version": "5",
   "specifiers": {
+    "npm:@types/node@*": "22.15.15",
     "npm:@types/pg@^8.15.5": "8.15.5",
+    "npm:csv-parse@^5.5.3": "5.6.0",
     "npm:drizzle-kit@*": "0.31.4_esbuild@0.25.8",
     "npm:drizzle-kit@~0.31.4": "0.31.4_esbuild@0.25.8",
     "npm:drizzle-orm@~0.44.4": "0.44.4_@types+pg@8.15.5_pg@8.16.3",
@@ -399,6 +401,9 @@
     "buffer-from@1.1.2": {
       "integrity": "sha512-E+XQCRwSbaaiChtv6k6Dwgc+bx+Bs6vuKJHHl5kox/BaKbhiXzqQOwK4cO22yElGp2OCmjwVhT3HmxgyPGnJfQ=="
     },
+    "csv-parse@5.6.0": {
+      "integrity": "sha512-l3nz3euub2QMg5ouu5U09Ew9Wf6/wQ8I++ch1loQ0ljmzhmfZYrH9fflS22i/PQEvsPvxCwxgz5q7UB8K1JO4Q=="
+    },
     "debug@4.4.1": {
       "integrity": "sha512-KcKCqiftBJcZr++7ykoDIEwSa3XWowTfNPo92BYxjXiyYEVrUQh2aLyhxBCwww+heortUFxEJYcRzosstTEBYQ==",
       "dependencies": [
@@ -755,6 +760,7 @@
   "workspace": {
     "dependencies": [
       "npm:@types/pg@^8.15.5",
+      "npm:csv-parse@^5.5.3",
       "npm:drizzle-kit@~0.31.4",
       "npm:drizzle-orm@~0.44.4",
       "npm:pg@^8.16.3"

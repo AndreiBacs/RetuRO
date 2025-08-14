@@ -1,0 +1,1 @@
+ALTER TABLE "barcodes" ADD COLUMN "status" text NOT NULL;
