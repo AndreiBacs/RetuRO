@@ -3,6 +3,7 @@ import { oakCors } from 'cors';
 import { load } from 'https://deno.land/std@0.208.0/dotenv/mod.ts';
 import userRoutes from './routes/userRoutes.ts';
 import webhookRoutes from './routes/webhookRoutes.ts';
+import barcodeRoutes from './routes/barcodeRoutes.ts';
 import { testDatabaseConnection } from './db/db.ts';
 
 // Load environment variables from env.dev file
@@ -61,6 +62,10 @@ app.use(userRoutes.allowedMethods());
 // Webhook routes
 app.use(webhookRoutes.routes());
 app.use(webhookRoutes.allowedMethods());
+
+// Barcode routes
+app.use(barcodeRoutes.routes());
+app.use(barcodeRoutes.allowedMethods());
 
 // Error handling middleware
 app.use(async (ctx: Context, next) => {
