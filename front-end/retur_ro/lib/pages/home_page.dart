@@ -1,12 +1,13 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:retur_ro/services/theme_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:retur_ro/api/fake_api.dart';
 import 'package:retur_ro/location_cache.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
+import 'package:provider/provider.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -37,12 +38,14 @@ class _HomePageState extends State<HomePage> {
   double _widgetHeight = 0;
   final ValueNotifier<double> _fabPositionNotifier = ValueNotifier<double>(0);
   final double _fabPositionPadding = 20.0;
-  
+
   // Add ValueNotifier to track bottom sheet expansion state
-  final ValueNotifier<bool> _isBottomSheetExpandedNotifier = ValueNotifier<bool>(false);
-  
+  final ValueNotifier<bool> _isBottomSheetExpandedNotifier =
+      ValueNotifier<bool>(false);
+
   // Add ValueNotifier to track bottom sheet collapsed state
-  final ValueNotifier<bool> _isBottomSheetCollapsedNotifier = ValueNotifier<bool>(false);
+  final ValueNotifier<bool> _isBottomSheetCollapsedNotifier =
+      ValueNotifier<bool>(false);
 
   @override
   void initState() {
@@ -196,6 +199,13 @@ class _HomePageState extends State<HomePage> {
           children: [
             TileLayer(
               urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              tileBuilder:
+                  Provider.of<ThemeService>(
+                    context,
+                    listen: false,
+                  ).isDarkMode(context)
+                  ? darkModeTileBuilder
+                  : null,
               userAgentPackageName: 'com.example.retur_ro',
             ),
             CurrentLocationLayer(
@@ -361,20 +371,20 @@ class _HomePageState extends State<HomePage> {
                               ],
                             ),
                           ),
-                                                     ValueListenableBuilder<bool>(
-                             valueListenable: _isBottomSheetExpandedNotifier,
-                             builder: (context, isExpanded, child) {
-                               return IconButton(
-                                 onPressed: _toggleBottomSheet,
-                                 icon: Icon(
-                                   isExpanded
-                                       ? Icons.keyboard_arrow_down
-                                       : Icons.keyboard_arrow_up,
-                                   color: Theme.of(context).colorScheme.primary,
-                                 ),
-                               );
-                             },
-                           ),
+                          ValueListenableBuilder<bool>(
+                            valueListenable: _isBottomSheetExpandedNotifier,
+                            builder: (context, isExpanded, child) {
+                              return IconButton(
+                                onPressed: _toggleBottomSheet,
+                                icon: Icon(
+                                  isExpanded
+                                      ? Icons.keyboard_arrow_down
+                                      : Icons.keyboard_arrow_up,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                              );
+                            },
+                          ),
                         ],
                       ),
                     ),
