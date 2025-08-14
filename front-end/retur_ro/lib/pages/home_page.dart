@@ -10,6 +10,7 @@ import 'package:retur_ro/location_cache.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
+import 'package:flutter_map_compass/flutter_map_compass.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -72,7 +73,10 @@ class _HomePageState extends State<HomePage> {
         _markers = List<Marker>.generate(
           20,
           (_) => Marker(
-            child: const Icon(Icons.location_on),
+            child: Icon(
+              Icons.location_on,
+              color: Theme.of(context).colorScheme.primary,
+            ),
             point: LatLng(
               _random.nextDouble() * 0.02 - 0.01 + position.latitude,
               _random.nextDouble() * 0.02 - 0.01 + position.longitude,
@@ -223,6 +227,10 @@ class _HomePageState extends State<HomePage> {
                   : null,
               userAgentPackageName: 'com.example.retur_ro',
             ),
+            CurrentLocationLayer(
+              alignPositionStream: _alignPositionStreamController.stream,
+              alignPositionOnUpdate: _alignPositionOnUpdate,
+            ),
             MarkerClusterLayerWidget(
               options: MarkerClusterLayerOptions(
                 maxClusterRadius: 50,
@@ -236,21 +244,35 @@ class _HomePageState extends State<HomePage> {
                   return Container(
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(20),
-                      color: Colors.blue,
+                      color: Theme.of(context).colorScheme.primary,
                     ),
                     child: Center(
                       child: Text(
                         markers.length.toString(),
-                        style: const TextStyle(color: Colors.white),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onPrimary,
+                        ),
                       ),
                     ),
                   );
                 },
               ),
             ),
-            CurrentLocationLayer(
-              alignPositionStream: _alignPositionStreamController.stream,
-              alignPositionOnUpdate: _alignPositionOnUpdate,
+            MapCompass(
+              rotationOffset: -45,
+              icon: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Icon(
+                    Icons.explore_outlined,
+                    color: Theme.of(context).colorScheme.primary,
+                    size: 50,
+                  ),
+                  Icon(Icons.explore, color: Colors.white54, size: 50),
+                  Icon(Icons.circle_outlined, color: Colors.black, size: 50),
+                ],
+              ),
+              hideIfRotatedNorth: true,
             ),
             RichAttributionWidget(
               showFlutterMapAttribution: false,
