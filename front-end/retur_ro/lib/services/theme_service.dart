@@ -38,13 +38,15 @@ class ThemeService extends ChangeNotifier {
     }
   }
 
-  bool get isDarkMode {
-    if (_themeMode == ThemeMode.system) {
-      // For system mode, we'll need to check the platform brightness
-      // This will be handled in the main app
+  bool isDarkMode(BuildContext context) {
+    if (_themeMode == ThemeMode.dark) {
+      return true;
+    } else if (_themeMode == ThemeMode.light) {
       return false;
+    } else {
+      // ThemeMode.system - check actual system brightness
+      return MediaQuery.of(context).platformBrightness == Brightness.dark;
     }
-    return _themeMode == ThemeMode.dark;
   }
 
   String get themeModeName {
