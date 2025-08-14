@@ -62,6 +62,12 @@ class _MyHomePageState extends State<MyHomePage> {
     ProfilePage(),
   ];
 
+  static const List<String> _titles = <String>[
+    'Return IT',
+    'Search',
+    'Profile',
+  ];
+
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -73,7 +79,7 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
+        title: Text(_titles[_selectedIndex]),
         actions: [
           Padding(
             padding: const EdgeInsets.all(8.0),

@@ -51,9 +51,7 @@ class SettingsPage extends StatelessWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (context) => const DarkModePage(),
-                ),
+                MaterialPageRoute(builder: (context) => const DarkModePage()),
               );
             },
           ),

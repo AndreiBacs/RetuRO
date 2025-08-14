@@ -25,32 +25,47 @@ class ProfilePage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 16),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'User Name',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onSurface,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'User Name',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
                       ),
-                    ),
-                    Text(
-                      'user@example.com',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      Text(
+                        'user@example.com',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
+                ),
+                IconButton(
+                  onPressed: () {
+                    // TODO: Navigate to edit profile page
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Edit Profile coming soon!')),
+                    );
+                  },
+                  icon: Icon(
+                    Icons.edit,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  tooltip: 'Edit Profile',
                 ),
               ],
             ),
           ),
         ),
         const SizedBox(height: 16),
-        
+
         // Profile options
         _buildProfileOption(
           context,
@@ -60,21 +75,7 @@ class ProfilePage extends StatelessWidget {
           onTap: () {
             Navigator.push(
               context,
-              MaterialPageRoute(
-                builder: (context) => const SettingsPage(),
-              ),
-            );
-          },
-        ),
-        _buildProfileOption(
-          context,
-          icon: Icons.edit,
-          title: 'Edit Profile',
-          subtitle: 'Update your personal information',
-          onTap: () {
-            // TODO: Navigate to edit profile page
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Edit Profile coming soon!')),
+              MaterialPageRoute(builder: (context) => const SettingsPage()),
             );
           },
         ),
@@ -157,4 +158,4 @@ class ProfilePage extends StatelessWidget {
       ),
     );
   }
-} 
+}
