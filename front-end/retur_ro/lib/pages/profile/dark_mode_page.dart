@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/theme_service.dart';
+import '../../services/theme_service.dart';
 
 class DarkModePage extends StatefulWidget {
   const DarkModePage({super.key});

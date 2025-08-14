@@ -9,6 +9,9 @@ A Flutter-based mobile application for the RetuRO recycling management platform.
 - 📱 **Cross-platform**: iOS and Android support
 - 🎨 **Modern UI**: Material Design components
 - 🔄 **Real-time Updates**: Live data synchronization
+- 📷 **Barcode Scanner**: Camera-based barcode scanning with custom overlay
+- 🎯 **Scanner Controls**: Torch, camera switching, and auto-hide controls
+- 🌙 **Theme Support**: Light and dark mode with theme-aware UI elements
 
 ## 📋 Prerequisites
 
@@ -63,12 +66,24 @@ lib/
 ├── main.dart              # Application entry point
 ├── api/                   # API integration
 │   └── fake_api.dart     # Mock API for development
+├── location_cache.dart    # Location caching service
 ├── location_service.dart  # Location services
-└── pages/                # Application pages
-    ├── home_page.dart     # Home screen
-    ├── profile_page.dart  # User profile
-    ├── search_page.dart   # Search functionality
-    └── settings_page.dart # App settings
+├── services/              # App services
+│   ├── location_service.dart  # Location handling
+│   └── theme_service.dart     # Theme management
+├── pages/                 # Application pages
+│   ├── home_page.dart     # Home screen
+│   ├── profile/           # Profile-related pages
+│   │   ├── dark_mode_page.dart
+│   │   ├── profile_page.dart
+│   │   └── settings_page.dart
+│   ├── scanner/           # Scanner functionality
+│   │   ├── camera_controls.dart
+│   │   ├── scanner_overlay.dart
+│   │   └── scanner_page.dart
+│   └── search_page.dart   # Search functionality
+└── widgets/               # Reusable widgets
+    └── recycle_icon.dart  # Custom recycle icon widget
 ```
 
 ## 🔧 Dependencies
@@ -79,6 +94,7 @@ lib/
 - `http`: HTTP client for API calls
 - `geolocator`: Location services
 - `geocoding`: Address geocoding
+- `mobile_scanner`: Camera-based barcode scanning
 
 ### Development Dependencies
 - `flutter_test`: Testing framework
@@ -90,14 +106,17 @@ lib/
 - Minimum SDK: 21
 - Target SDK: 33
 - Supports Android 5.0 (API level 21) and higher
+- Camera permissions for barcode scanning
 
 ### iOS
 - Minimum iOS version: 11.0
 - Supports iPhone and iPad
+- Camera permissions for barcode scanning
 
 ### Web
 - Modern web browsers
 - Progressive Web App (PWA) support
+- Limited camera support (may require HTTPS)
 
 ## 🛠️ Development
 
@@ -118,6 +137,13 @@ lib/
 1. Use `geolocator` package for GPS
 2. Use `geocoding` package for address conversion
 3. Handle location permissions properly
+
+### Adding Scanner Features
+
+1. Use `mobile_scanner` package for camera access
+2. Implement custom overlay with `CustomPainter`
+3. Handle camera permissions and controls
+4. Add theme-aware UI elements
 
 ### Code Quality
 
@@ -217,7 +243,7 @@ flutter test integration_test/
 
 ### Permissions
 - Location permissions for GPS features
-- Camera permissions if needed
+- Camera permissions for barcode scanning
 - Storage permissions if required
 
 ## 🚀 Deployment

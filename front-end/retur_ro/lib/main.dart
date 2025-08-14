@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'pages/home_page.dart';
 import 'pages/search_page.dart';
-import 'pages/profile_page.dart';
+import 'pages/scanner/scanner_page.dart';
+import 'pages/profile/profile_page.dart';
 import 'widgets/recycle_icon.dart';
 import 'services/theme_service.dart';
 
@@ -59,12 +60,14 @@ class _MyHomePageState extends State<MyHomePage> {
   static const List<Widget> _pages = <Widget>[
     HomePage(),
     SearchPage(),
+    ScannerPage(),
     ProfilePage(),
   ];
 
   static const List<String> _titles = <String>[
     'Return IT',
     'Search',
+    'Scanner',
     'Profile',
   ];
 
@@ -97,6 +100,10 @@ class _MyHomePageState extends State<MyHomePage> {
         destinations: const <NavigationDestination>[
           NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
           NavigationDestination(icon: Icon(Icons.search), label: 'Search'),
+          NavigationDestination(
+            icon: Icon(Icons.qr_code_scanner),
+            label: 'Scanner',
+          ),
           NavigationDestination(icon: Icon(Icons.person), label: 'Profile'),
         ],
       ),
