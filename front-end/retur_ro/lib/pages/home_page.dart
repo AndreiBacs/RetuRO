@@ -65,24 +65,12 @@ class _HomePageState extends State<HomePage> {
     // Listen for position changes and move map
     _positionListener = () {
       final position = _locationCache.position.value;
-      if (position != null) {
+      if (position != null && mounted) {
         _mapController.move(
           LatLng(position.latitude, position.longitude),
           13.0,
         );
-        _markers = List<Marker>.generate(
-          20,
-          (_) => Marker(
-            child: Icon(
-              Icons.location_on,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            point: LatLng(
-              _random.nextDouble() * 0.02 - 0.01 + position.latitude,
-              _random.nextDouble() * 0.02 - 0.01 + position.longitude,
-            ),
-          ),
-        );
+        _updateMarkers(position);
       }
     };
     _locationCache.position.addListener(_positionListener!);
@@ -98,6 +86,12 @@ class _HomePageState extends State<HomePage> {
       _isBottomSheetExpandedNotifier.value = _sheetExtent > 0.3;
       // Initialize the bottom sheet collapsed state
       _isBottomSheetCollapsedNotifier.value = _sheetExtent <= 0.0;
+      
+      // Initialize markers if position is already available
+      final currentPosition = _locationCache.position.value;
+      if (currentPosition != null) {
+        _updateMarkers(currentPosition);
+      }
     });
 
     // Add listener to sheet controller to ensure FAB position stays in sync
@@ -132,6 +126,37 @@ class _HomePageState extends State<HomePage> {
         _isLoadingPlaces = false;
       });
     }
+  }
+
+  // Method to update markers with stable positions
+  void _updateMarkers(dynamic position) {
+    if (!mounted) return;
+    
+    // Store theme color to avoid unsafe context access
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    
+    setState(() {
+      _markers = List<Marker>.generate(
+        20,
+        (index) {
+          // Use index to create more stable marker positions
+          // This prevents markers from "teleporting" on each update
+          final latOffset = (_random.nextDouble() * 0.02 - 0.01) * (index + 1) / 20;
+          final lngOffset = (_random.nextDouble() * 0.02 - 0.01) * (index + 1) / 20;
+          
+          return Marker(
+            child: Icon(
+              Icons.location_on,
+              color: primaryColor,
+            ),
+            point: LatLng(
+              position.latitude + latOffset,
+              position.longitude + lngOffset,
+            ),
+          );
+        },
+      );
+    });
   }
 
   @override
