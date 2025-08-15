@@ -83,6 +83,7 @@ class _CameraControlsState extends State<CameraControls>
           children: [
             IconButton(
               icon: const Icon(Icons.settings),
+              color: Colors.white,
               onPressed: _toggleControls,
             ),
             SizeTransition(

@@ -89,33 +89,10 @@ class ScannerOverlay extends CustomPainter {
           Offset(scanArea.left, scanArea.bottom - cornerRadius),
           radius: const Radius.circular(cornerRadius),
         )
-                 ..lineTo(scanArea.left, scanArea.bottom - cornerLength),
-       cornerPaint,
-     );
-
-     // Draw the laser line (dashed)
-     final laserPaint = Paint()
-       ..color = Colors.red
-       ..style = PaintingStyle.stroke
-       ..strokeWidth = 2;
-
-     final laserY = scanArea.center.dy;
-     final dashWidth = 8.0;
-     final dashSpace = 4.0;
-     final startX = scanArea.left + 10;
-     final endX = scanArea.right - 10;
-     
-     double currentX = startX;
-     while (currentX < endX) {
-       final dashEndX = (currentX + dashWidth).clamp(currentX, endX);
-       canvas.drawLine(
-         Offset(currentX, laserY),
-         Offset(dashEndX, laserY),
-         laserPaint,
-       );
-       currentX += dashWidth + dashSpace;
-     }
-   }
+        ..lineTo(scanArea.left, scanArea.bottom - cornerLength),
+      cornerPaint,
+    );
+  }
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
