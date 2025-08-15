@@ -25,7 +25,7 @@ void main() {
       configService.setBaseUrl('http://custom-server:9000');
       configService.reset();
       
-      expect(configService.baseUrl, equals('http://localhost:8000'));
+      expect(configService.baseUrl, equals(AppConfig.devBackendUrl));
     });
 
     test('should initialize with custom URL', () {
