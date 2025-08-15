@@ -6,7 +6,7 @@ A modern Deno-based REST API backend for the RetuRO project, featuring webhook i
 
 - 🚀 **Fast & Modern**: Built with Deno and Oak framework
 - 🔒 **Secure**: Authentication middleware and webhook signature verification
-- 📝 **TypeScript**: Full TypeScript support with strict typing
+- 📝 **TypeScript**: Full TypeScript support with strict typing and proper type inference
 - 🧪 **Tested**: Unit tests included
 - 🔄 **CORS**: Cross-origin resource sharing enabled
 - 📊 **Health Check**: Built-in health monitoring endpoints
@@ -14,8 +14,9 @@ A modern Deno-based REST API backend for the RetuRO project, featuring webhook i
 - 🔗 **Webhooks**: TOMRA webhook integration with signature verification
 - 📋 **Migration**: Database schema management with Drizzle Kit
 - 🌱 **Data Seeding**: Comprehensive database seeding with Romanian RVM data
-- 📊 **CSV Processing**: Bulk data import from CSV files
+- 📊 **CSV Processing**: Bulk data import from CSV files with batch processing
 - 🇷🇴 **Romanian Focus**: Specialized for Romanian RVM market
+- 🔍 **Barcode Validation**: Real-time barcode checking against Romanian registry
 
 ## 📋 Prerequisites
 
@@ -120,8 +121,9 @@ The project includes comprehensive database seeding functionality:
 
 - **72,000+ Barcodes** (from CSV file):
   - Reads from: `assets/Coduri inregistrate in Registrul Ambalajelor_11.08.2025.csv`
-  - Batch processing for large datasets
-  - Automatic data validation
+  - Batch processing for large datasets (1,000 records per batch)
+  - Automatic data validation and error handling
+  - Progress tracking with detailed logging
 
 ### Running the Seed
 
@@ -137,10 +139,11 @@ deno run --allow-net --allow-read --allow-env --env-file=env.dev --allow-read=./
 
 The seed automatically processes CSV files with the following features:
 - **Automatic header detection** (Barcode, Status columns)
-- **Batch processing** (1,000 records per batch)
-- **Data validation** (filters empty rows)
-- **Progress tracking** (shows batch progress)
-- **Error handling** (graceful fallback)
+- **Batch processing** (1,000 records per batch for memory efficiency)
+- **Data validation** (filters empty rows and invalid data)
+- **Progress tracking** (shows batch progress and completion status)
+- **Error handling** (graceful fallback to sample data if CSV reading fails)
+- **Type safety** (proper TypeScript types for all data structures)
 
 ## 🔗 API Endpoints
 
@@ -155,6 +158,11 @@ The seed automatically processes CSV files with the following features:
 - `PUT /api/users/:id` - Update user
 - `DELETE /api/users/:id` - Delete user
 
+### Barcodes
+- `POST /api/barcodes/check` - Validate barcode for recycling
+  - Request: `{"barcode": "5941234567890"}`
+  - Response: `{"success": true, "data": true, "message": "Barcode is valid"}`
+
 ### Webhooks
 - `POST /api/webhooks/tomra` - Handle TOMRA webhook events
 - `GET /api/webhooks/tomra/health` - TOMRA webhook health check
@@ -167,6 +175,11 @@ curl http://localhost:8000/health
 
 # Hello endpoint
 curl http://localhost:8000/api/hello
+
+# Check barcode
+curl -X POST http://localhost:8000/api/barcodes/check \
+  -H "Content-Type: application/json" \
+  -d '{"barcode": "5941234567890"}'
 
 # Get all users
 curl http://localhost:8000/api/users
@@ -201,27 +214,32 @@ back-end/
 ├── drizzle/            # Database migrations
 │   ├── 0000_mean_thor.sql
 │   ├── 0001_user_permissions.sql
+│   ├── 0002_curvy_living_tribunal.sql
+│   ├── 0003_jazzy_drax.sql
 │   └── meta/
 ├── assets/             # Data files
-│   └── Coduri inregistrate in Registrul Ambalajelor_11.08.2025.csv
+│   ├── Coduri inregistrate in Registrul Ambalajelor_11.08.2025.csv
+│   └── Coduri inregistrate in Registrul Ambalajelor_11.08.2025.xlsx
 ├── src/                # Source code
 │   ├── main.ts         # Application entry point
 │   ├── controllers/    # Business logic controllers
-│   │   ├── userController.ts
-│   │   └── webhookController.ts
+│   │   ├── barcodeController.ts  # Barcode validation logic
+│   │   ├── userController.ts     # User management
+│   │   └── webhookController.ts  # Webhook handling
 │   ├── routes/         # Route definitions
-│   │   ├── userRoutes.ts
-│   │   └── webhookRoutes.ts
+│   │   ├── barcodeRoutes.ts      # Barcode endpoints
+│   │   ├── userRoutes.ts         # User endpoints
+│   │   └── webhookRoutes.ts      # Webhook endpoints
 │   ├── middleware/     # Custom middleware
-│   │   └── auth.ts
+│   │   └── auth.ts     # Authentication middleware
 │   ├── db/            # Database configuration
 │   │   ├── db.ts      # Database connection
-│   │   ├── schema.ts  # Database schema
-│   │   ├── seed.ts    # Database seeding
+│   │   ├── schema.ts  # Database schema with proper types
+│   │   ├── seed.ts    # Database seeding with type safety
 │   │   └── README.md  # Database documentation
 │   ├── types/         # TypeScript type definitions
-│   │   ├── index.ts
-│   │   └── tomra.ts
+│   │   ├── index.ts   # Common types
+│   │   └── tomra.ts   # TOMRA-specific types
 │   └── utils/         # Utility functions
 │       └── signatureVerification.ts
 └── tests/             # Unit tests
@@ -368,6 +386,19 @@ For CSV data:
 2. Update the CSV reading logic in `seed.ts`
 3. Run: `deno task db:seed`
 
+### Type Safety
+
+The project uses strict TypeScript with proper type inference:
+
+```typescript
+// Proper type inference for database operations
+import type { InferSelectModel } from "drizzle-orm";
+import { barcodes } from "./schema.ts";
+
+// Type-safe barcode data
+let insertedBarcodes: InferSelectModel<typeof barcodes>[] = [];
+```
+
 ## 📋 Available Tasks
 
 - `deno task dev` - Start development server with hot reload
@@ -408,6 +439,7 @@ This backend is specifically designed for the Romanian RVM (Reverse Vending Mach
 - **Romanian Postal Codes** (proper format validation)
 - **Romanian Addresses** (accurate city/state/country data)
 - **Local Business Integration** (Romanian companies and locations)
+- **Barcode Validation** (real-time checking against Romanian registry)
 
 ## 🤝 Contributing
 

@@ -24,13 +24,13 @@ class MyApp extends StatelessWidget {
             title: 'Return IT',
             theme: ThemeData(
               colorScheme: ColorScheme.fromSeed(
-                seedColor: const Color.fromARGB(255, 58, 183, 106),
+                seedColor: Colors.green.shade800,
               ),
               useMaterial3: true,
             ),
             darkTheme: ThemeData(
               colorScheme: ColorScheme.fromSeed(
-                seedColor: const Color.fromARGB(255, 58, 183, 106),
+                seedColor: Colors.green.shade800,
                 brightness: Brightness.dark,
               ),
               useMaterial3: true,

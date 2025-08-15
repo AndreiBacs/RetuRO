@@ -1,17 +1,18 @@
 # RetuRO Mobile App
 
-A Flutter-based mobile application for the RetuRO recycling management platform.
+A Flutter-based mobile application for the RetuRO recycling management platform, specifically designed for the Romanian RVM (Reverse Vending Machine) market.
 
 ## 📱 Features
 
+- 📷 **Barcode Scanner**: Camera-based scanning with custom overlay and controls
 - 📍 **Location Services**: GPS tracking and geocoding capabilities
 - 🌐 **HTTP Integration**: API communication with backend services
 - 📱 **Cross-platform**: iOS and Android support
-- 🎨 **Modern UI**: Material Design components
+- 🎨 **Modern UI**: Material Design components with theme support
 - 🔄 **Real-time Updates**: Live data synchronization
-- 📷 **Barcode Scanner**: Camera-based barcode scanning with custom overlay
 - 🎯 **Scanner Controls**: Torch, camera switching, and auto-hide controls
 - 🌙 **Theme Support**: Light and dark mode with theme-aware UI elements
+- 🇷🇴 **Romanian Focus**: Specialized for Romanian recycling market
 
 ## 📋 Prerequisites
 
@@ -67,8 +68,8 @@ lib/
 ├── api/                   # API integration
 │   └── fake_api.dart     # Mock API for development
 ├── location_cache.dart    # Location caching service
-├── location_service.dart  # Location services
 ├── services/              # App services
+│   ├── http_service.dart  # HTTP client and API communication
 │   ├── location_service.dart  # Location handling
 │   └── theme_service.dart     # Theme management
 ├── pages/                 # Application pages
@@ -78,11 +79,14 @@ lib/
 │   │   ├── profile_page.dart
 │   │   └── settings_page.dart
 │   ├── scanner/           # Scanner functionality
-│   │   ├── camera_controls.dart
-│   │   ├── scanner_overlay.dart
-│   │   └── scanner_page.dart
+│   │   ├── scanner_page.dart
+│   │   └── widgets/       # Scanner-specific widgets
+│   │       ├── barcode_result_dialog.dart  # Scan result display
+│   │       ├── camera_controls.dart        # Camera controls
+│   │       ├── error_dialog.dart           # Error handling
+│   │       └── scanner_overlay.dart        # Custom scanning overlay
 │   └── search_page.dart   # Search functionality
-└── widgets/               # Reusable widgets
+└── widgets/               # Shared reusable widgets
     └── recycle_icon.dart  # Custom recycle icon widget
 ```
 
@@ -120,6 +124,33 @@ lib/
 
 ## 🛠️ Development
 
+### Scanner Widgets
+
+The scanner functionality is organized into modular widgets:
+
+#### BarcodeResultDialog
+- Displays scan results with validation status
+- Shows barcode data and recycling eligibility
+- Handles both valid and invalid barcode responses
+- Includes error message display when needed
+
+#### ErrorDialog
+- Handles scanner errors gracefully
+- Provides clear error messages to users
+- Includes retry functionality
+
+#### CameraControls
+- Torch/flashlight control
+- Camera switching (front/back)
+- Auto-hide functionality for better UX
+- Theme-aware styling
+
+#### ScannerOverlay
+- Custom scanning frame overlay
+- Visual guide for barcode positioning
+- Animated scanning indicators
+- Responsive design for different screen sizes
+
 ### Adding New Pages
 
 1. Create a new page in `lib/pages/`
@@ -128,7 +159,7 @@ lib/
 
 ### Adding API Integration
 
-1. Create API service in `lib/api/`
+1. Create API service in `lib/services/`
 2. Add HTTP client configuration
 3. Implement error handling
 
@@ -262,6 +293,21 @@ flutter test integration_test/
 1. Build web version
 2. Deploy to hosting service
 3. Configure domain and SSL
+
+## 🇷🇴 Romanian Market Features
+
+This app is specifically designed for the Romanian recycling market:
+
+### Supported Features
+- **Romanian Barcode Validation**: Integration with Romanian packaging registry
+- **Local RVM Integration**: Support for Romanian RVM manufacturers
+- **Romanian Addresses**: Proper handling of Romanian postal codes and addresses
+- **Localization**: Romanian language support (planned)
+
+### Data Sources
+- **Romanian Packaging Registry**: 72,000+ official barcodes
+- **Local Supermarkets**: Kaufland, Lidl, and other major chains
+- **RVM Manufacturers**: TOMRA, RVM Systems, Envipco, ValuePack, RomCooling
 
 ## 🤝 Contributing
 
