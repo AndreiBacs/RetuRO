@@ -1,11 +1,12 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
+import 'config_service.dart';
+import '../config/app_config.dart';
 
 class HttpService {
-  static const String _baseUrl = 'http://172.20.10.2:8000'; // Default backend URL
-  static const Duration _timeout = Duration(seconds: 30);
-  
+  static Duration get _timeout => Duration(seconds: AppConfig.defaultTimeoutSeconds);
+
   static final HttpService _instance = HttpService._internal();
   factory HttpService() => _instance;
   HttpService._internal();
@@ -45,7 +46,7 @@ class HttpService {
   }) async {
     try {
       final uri = _buildUri(endpoint, queryParameters);
-      
+
       if (kDebugMode) {
         print('GET: $uri');
       }
@@ -68,7 +69,7 @@ class HttpService {
   }) async {
     try {
       final uri = _buildUri(endpoint, queryParameters);
-      
+
       if (kDebugMode) {
         print('POST: $uri');
         if (body != null) print('Body: $body');
@@ -96,7 +97,7 @@ class HttpService {
   }) async {
     try {
       final uri = _buildUri(endpoint, queryParameters);
-      
+
       if (kDebugMode) {
         print('PUT: $uri');
         if (body != null) print('Body: $body');
@@ -123,7 +124,7 @@ class HttpService {
   }) async {
     try {
       final uri = _buildUri(endpoint, queryParameters);
-      
+
       if (kDebugMode) {
         print('DELETE: $uri');
       }
@@ -146,7 +147,7 @@ class HttpService {
   }) async {
     try {
       final uri = _buildUri(endpoint, queryParameters);
-      
+
       if (kDebugMode) {
         print('PATCH: $uri');
         if (body != null) print('Body: $body');
@@ -167,12 +168,18 @@ class HttpService {
   }
 
   Uri _buildUri(String endpoint, Map<String, String>? queryParameters) {
-    final uri = Uri.parse('$_baseUrl$endpoint');
-    
+    // Ensure proper path joining
+    final configService = ConfigService();
+    final baseUrl = configService.baseUrl.endsWith('/')
+        ? configService.baseUrl.substring(0, configService.baseUrl.length - 1)
+        : configService.baseUrl;
+    final path = endpoint.startsWith('/') ? endpoint : '/$endpoint';
+    final uri = Uri.parse('$baseUrl$path');
+
     if (queryParameters != null) {
       return uri.replace(queryParameters: queryParameters);
     }
-    
+
     return uri;
   }
 
@@ -183,19 +190,23 @@ class HttpService {
     }
 
     try {
-      final data = response.body.isNotEmpty 
-          ? jsonDecode(response.body) 
-          : null;
+      final data = response.body.isNotEmpty ? jsonDecode(response.body) : null;
 
       // Handle ApiResponse format from backend
       if (data is Map<String, dynamic>) {
         final apiResponse = data;
         final success = apiResponse['success'] as bool? ?? false;
         final responseData = apiResponse['data'];
-        final message = apiResponse['message'] as String? ?? apiResponse['error'] as String? ?? _getStatusMessage(response.statusCode);
+        final message =
+            apiResponse['message'] as String? ??
+            apiResponse['error'] as String? ??
+            _getStatusMessage(response.statusCode);
 
         return HttpResponse(
-          success: success && response.statusCode >= 200 && response.statusCode < 300,
+          success:
+              success &&
+              response.statusCode >= 200 &&
+              response.statusCode < 300,
           statusCode: response.statusCode,
           data: responseData,
           message: message,

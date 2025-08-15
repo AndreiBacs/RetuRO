@@ -100,12 +100,21 @@ class _CameraControlsState extends State<CameraControls>
                         _isTorchOn ? Icons.flash_on : Icons.flash_off,
                         color: Colors.white,
                       ),
+                      tooltip: 'Toggle torch',
                       onPressed: () {
-                        widget.cameraController.toggleTorch();
-                        setState(() {
-                          _isTorchOn = !_isTorchOn;
-                        });
-                        _startHideTimer();
+                        try {
+                          widget.cameraController.toggleTorch();
+                          setState(() {
+                            _isTorchOn = !_isTorchOn;
+                          });
+                          _startHideTimer();
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Unable to toggle torch: $e'),
+                            ),
+                          );
+                        }
                       },
                     ),
                     IconButton(
@@ -113,12 +122,21 @@ class _CameraControlsState extends State<CameraControls>
                         _isFrontCamera ? Icons.camera_front : Icons.camera_rear,
                         color: Colors.white,
                       ),
+                      tooltip: 'Switch camera',
                       onPressed: () {
-                        widget.cameraController.switchCamera();
-                        setState(() {
-                          _isFrontCamera = !_isFrontCamera;
-                        });
-                        _startHideTimer();
+                        try {
+                          widget.cameraController.switchCamera();
+                          setState(() {
+                            _isFrontCamera = !_isFrontCamera;
+                          });
+                          _startHideTimer();
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Unable to switch camera: $e'),
+                            ),
+                          );
+                        }
                       },
                     ),
                   ],

@@ -6,8 +6,16 @@ import 'pages/scanner/scanner_page.dart';
 import 'pages/profile/profile_page.dart';
 import 'widgets/recycle_icon.dart';
 import 'services/theme_service.dart';
+import 'services/config_service.dart';
 
 void main() {
+  // Initialize configuration service
+  ConfigService().initialize();
+  
+  // Optional: Override the default URL if needed
+  // For example, if you're testing on a physical device and need the IP address:
+  // ConfigService().setBaseUrl(AppConfig.devBackendUrlWithIP);
+  
   runApp(const MyApp());
 }
 

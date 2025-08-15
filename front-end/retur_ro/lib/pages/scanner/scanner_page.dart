@@ -101,7 +101,7 @@ class _ScannerPageState extends State<ScannerPage> {
     );
 
     try {
-      // Make API call to check barcode
+      // Make API call to check barcode with timeout handling
       final response = await _httpService.post(
         ApiEndpoints.barcodeCheck,
         body: {'barcode': barcodeData},
@@ -147,13 +147,13 @@ class _ScannerPageState extends State<ScannerPage> {
       // Close loading dialog
       Navigator.of(context).pop();
 
-      // Show error dialog
+      // Show error dialog with improved timeout handling
       showDialog(
         context: context,
         barrierDismissible: false,
         builder: (BuildContext context) {
           return ErrorDialog(
-            errorMessage: e.toString(),
+            errorMessage: _getUserFriendlyErrorMessage(e),
             onTryAgain: () {
               Navigator.of(context).pop();
               setState(() {
@@ -169,6 +169,21 @@ class _ScannerPageState extends State<ScannerPage> {
           });
         }
       });
+    }
+  }
+
+  /// Converts technical error messages to user-friendly messages
+  String _getUserFriendlyErrorMessage(dynamic error) {
+    final errorString = error.toString().toLowerCase();
+    
+    if (errorString.contains('timeout')) {
+      return 'The request took too long to complete. Please check your internet connection and try again.';
+    } else if (errorString.contains('network') || errorString.contains('connection')) {
+      return 'Network connection error. Please check your internet connection and try again.';
+    } else if (errorString.contains('server')) {
+      return 'Server error. Please try again later.';
+    } else {
+      return 'An unexpected error occurred. Please try again.';
     }
   }
 
