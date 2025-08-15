@@ -2,11 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'pages/home_page.dart';
 import 'pages/search_page.dart';
-import 'pages/profile_page.dart';
+import 'pages/scanner/scanner_page.dart';
+import 'pages/profile/profile_page.dart';
 import 'widgets/recycle_icon.dart';
 import 'services/theme_service.dart';
+import 'services/config_service.dart';
 
 void main() {
+  // Initialize configuration service
+  ConfigService().initialize();
+  
+  // Optional: Override the default URL if needed
+  // For example, if you're testing on a physical device and need the IP address:
+  // ConfigService().setBaseUrl(AppConfig.devBackendUrlWithIP);
+  
   runApp(const MyApp());
 }
 
@@ -23,13 +32,13 @@ class MyApp extends StatelessWidget {
             title: 'Return IT',
             theme: ThemeData(
               colorScheme: ColorScheme.fromSeed(
-                seedColor: const Color.fromARGB(255, 58, 183, 106),
+                seedColor: Colors.green.shade800,
               ),
               useMaterial3: true,
             ),
             darkTheme: ThemeData(
               colorScheme: ColorScheme.fromSeed(
-                seedColor: const Color.fromARGB(255, 58, 183, 106),
+                seedColor: Colors.green.shade800,
                 brightness: Brightness.dark,
               ),
               useMaterial3: true,
@@ -59,12 +68,14 @@ class _MyHomePageState extends State<MyHomePage> {
   static const List<Widget> _pages = <Widget>[
     HomePage(),
     SearchPage(),
+    ScannerPage(),
     ProfilePage(),
   ];
 
   static const List<String> _titles = <String>[
     'Return IT',
     'Search',
+    'Scanner',
     'Profile',
   ];
 
@@ -97,6 +108,10 @@ class _MyHomePageState extends State<MyHomePage> {
         destinations: const <NavigationDestination>[
           NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
           NavigationDestination(icon: Icon(Icons.search), label: 'Search'),
+          NavigationDestination(
+            icon: Icon(Icons.qr_code_scanner),
+            label: 'Scanner',
+          ),
           NavigationDestination(icon: Icon(Icons.person), label: 'Profile'),
         ],
       ),

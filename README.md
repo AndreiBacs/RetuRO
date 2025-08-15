@@ -1,6 +1,6 @@
 # RetuRO
 
-A modern recycling management platform with a Flutter mobile app and Deno backend API.
+A modern recycling management platform with a Flutter mobile app and Deno backend API, specifically designed for the Romanian RVM (Reverse Vending Machine) market.
 
 ## 🏗️ Project Structure
 
@@ -10,7 +10,27 @@ This is a monorepo containing both the frontend mobile application and backend A
 RetuRO/
 ├── front-end/          # Flutter mobile application
 │   └── retur_ro/      # Flutter project
+│       ├── lib/
+│       │   ├── pages/
+│       │   │   ├── scanner/
+│       │   │   │   ├── widgets/          # Scanner-specific widgets
+│       │   │   │   │   ├── barcode_result_dialog.dart
+│       │   │   │   │   ├── camera_controls.dart
+│       │   │   │   │   ├── error_dialog.dart
+│       │   │   │   │   └── scanner_overlay.dart
+│       │   │   │   └── scanner_page.dart
+│       │   │   ├── profile/
+│       │   │   └── home_page.dart
+│       │   ├── services/                 # App services
+│       │   └── widgets/                  # Shared widgets
 ├── back-end/           # Deno REST API backend
+│   ├── src/
+│   │   ├── controllers/
+│   │   ├── routes/
+│   │   ├── db/
+│   │   └── middleware/
+│   ├── assets/                          # CSV data files
+│   └── drizzle/                         # Database migrations
 ├── env.dev            # Environment configuration template
 ├── INSTALLATION.md    # Setup instructions
 └── README.md         # This file
@@ -20,9 +40,9 @@ RetuRO/
 
 ### Prerequisites
 
-- [Flutter](https://flutter.dev/) (for mobile app)
-- [Deno](https://deno.land/) (for backend API)
-- [PostgreSQL](https://www.postgresql.org/) (for database)
+- [Flutter](https://flutter.dev/) (version 3.8.1 or higher)
+- [Deno](https://deno.land/) (version 1.35 or higher)
+- [PostgreSQL](https://www.postgresql.org/) (version 12 or higher)
 
 ### Setup
 
@@ -43,6 +63,7 @@ cp env.dev .env
 cd back-end
 deno cache src/main.ts
 deno task db:migrate
+deno task db:seed
 deno task dev
 ```
 
@@ -57,9 +78,20 @@ flutter run
 
 The mobile application is built with Flutter and includes:
 
+- 📷 **Barcode Scanner**: Camera-based scanning with custom overlay and controls
 - 📍 **Location Services**: GPS tracking and geocoding
 - 🌐 **HTTP Integration**: API communication with backend
 - 📱 **Cross-platform**: iOS and Android support
+- 🎨 **Modern UI**: Material Design with theme support
+- 🔄 **Real-time Updates**: Live data synchronization
+
+### Key Features
+
+- **Scanner Widgets**: Modular scanner components including:
+  - `BarcodeResultDialog`: Displays scan results with validation status
+  - `ErrorDialog`: Handles scanner errors gracefully
+  - `CameraControls`: Torch, camera switching, and auto-hide controls
+  - `ScannerOverlay`: Custom scanning frame overlay
 
 ### Running the Mobile App
 
@@ -75,9 +107,17 @@ The REST API is built with Deno and includes:
 
 - 🚀 **Fast & Modern**: Deno runtime with Oak framework
 - 🔒 **Secure**: Authentication and webhook signature verification
-- 📝 **TypeScript**: Full TypeScript support
+- 📝 **TypeScript**: Full TypeScript support with strict typing
 - 🗄️ **Database**: PostgreSQL with Drizzle ORM
-- 🔗 **Webhooks**: TOMRA integration
+- 🔗 **Webhooks**: TOMRA integration with signature verification
+- 🇷🇴 **Romanian Focus**: Specialized for Romanian RVM market
+
+### Key Features
+
+- **Database Seeding**: 72,000+ Romanian barcodes from official registry
+- **CSV Processing**: Bulk data import with batch processing
+- **Webhook Integration**: TOMRA webhook handling with signature verification
+- **Type Safety**: Full TypeScript support with proper type inference
 
 ### Running the Backend
 
@@ -101,6 +141,9 @@ deno task test         # Run tests
 - `PUT /api/users/:id` - Update user
 - `DELETE /api/users/:id` - Delete user
 
+### Barcodes
+- `POST /api/barcodes/check` - Validate barcode for recycling
+
 ### Webhooks
 - `POST /api/webhooks/tomra` - Handle TOMRA webhook events
 - `GET /api/webhooks/tomra/health` - TOMRA webhook health check
@@ -117,6 +160,7 @@ deno task fmt          # Format code
 deno task lint         # Lint code
 deno task db:generate  # Generate migrations
 deno task db:migrate   # Run migrations
+deno task db:seed      # Seed database
 ```
 
 ### Frontend Development
@@ -148,7 +192,24 @@ CORS_ORIGIN=http://localhost:3000,http://localhost:5173
 
 # TOMRA Webhook
 TOMRA_WEBHOOK_SECRET=your_webhook_secret
+TOMRA_IP=34.140.242.111
 ```
+
+## 🇷🇴 Romanian RVM Market Focus
+
+This platform is specifically designed for the Romanian RVM market:
+
+### Supported Producers
+- **TOMRA ROMANIA** - Global leader in RVM solutions
+- **RVM Systems România** - Local RVM manufacturer
+- **Envipco România** - European factory producing RVMs locally
+- **ValuePack România** - Romanian packaging solutions
+- **RomCooling** - Romanian cooling solutions
+
+### Data Sources
+- **Romanian Packaging Registry** - 72,000+ official barcodes
+- **Local Supermarkets** - Kaufland, Lidl locations
+- **Real Addresses** - Accurate Romanian addresses
 
 ## 📚 Documentation
 
